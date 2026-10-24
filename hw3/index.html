@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 3 - Statistics</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --muted: #5a5a72;
+    --accent: #7a1f2b;
+    --card: #f5f3f0;
+    --border: #d9d4cc;
+    --code-bg: #14141f;
+    --code-fg: #e8e8f0;
+    --band: rgba(122, 31, 43, 0.12);
+    --line2: #1f5f7a;
+    --good: #2e9e5b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+      --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+      --code-bg: #0c0c14; --code-fg: #e8e8f0;
+      --band: rgba(224, 138, 150, 0.16); --line2: #6cc3e0; --good: #5fd08e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+    --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+    --code-bg: #0c0c14; --code-fg: #e8e8f0;
+    --band: rgba(224, 138, 150, 0.16); --line2: #6cc3e0; --good: #5fd08e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6; padding: 16px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { color: var(--accent); font-size: 1.7rem; margin-top: 0.4em; }
+  h2 { color: var(--accent); font-size: 1.3rem; margin-top: 1.8em;
+       border-bottom: 2px solid var(--border); padding-bottom: 0.2em; }
+  h3 { font-size: 1.05rem; margin-top: 1.4em; }
+  .muted { color: var(--muted); }
+  section { background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin: 18px 0; min-width: 0; }
+  pre { background: var(--code-bg); color: var(--code-fg); padding: 12px 14px;
+        border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg);
+             border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+             overflow-x: auto; white-space: nowrap; }
+  canvas { display: block; width: 100%; background: var(--bg);
+           border: 1px solid var(--border); border-radius: 8px; }
+  .traj { height: 280px; }
+  .hist { height: 170px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 8px 0;
+          font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; }
+  th { background: var(--border); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 12px 16px; align-items: end; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;
+                    color: var(--muted); }
+  input, select { font: inherit; padding: 6px 8px; border-radius: 6px;
+                  border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+  button { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 6px;
+           border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+           cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--line2); outline-offset: 2px; }
+  .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+           gap: 10px; }
+  .grid4 figure { margin: 0; min-width: 0; }
+  .grid4 figcaption { font-size: 0.8rem; color: var(--muted); text-align: center;
+                      font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem;
+            color: var(--muted); margin: 6px 0; }
+  .sw { display: inline-block; width: 16px; height: 4px; vertical-align: middle;
+        margin-right: 6px; border-radius: 2px; }
+  .ok { color: var(--good); font-weight: 600; }
+  .bad { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+<h1>Homework 3 — Penetration scores and the Law of Large Numbers</h1>
+<p class="muted">Statistics — <em>n</em> systems, <em>m</em> hackers. Each attack is a
+Bernoulli trial. We study the distribution of three penetration scores as
+<em>n → ∞</em>, and verify that the probability mass of the relative frequency
+concentrates on <em>p</em>. All results are simulated live in your browser.</p>
+
+<!-- ============================================================= -->
+<h2>The assignment</h2>
+<section>
+<p><strong>Given</strong> <em>n</em> systems and <em>m</em> hackers, generate for
+<em>n → ∞</em> the distribution of the penetration scores</p>
+<p class="formula">(1) ΣXᵢ / n &nbsp;&nbsp;&nbsp; (2) ΣXᵢ &nbsp;&nbsp;&nbsp; (3) ΣXᵢ / √n
+&nbsp;&nbsp;&nbsp; with Xᵢ ∈ {0, 1} &nbsp;and&nbsp; Xᵢ ∈ {−1, +1}</p>
+<p><strong>Verify</strong> that the probability mass concentrates on <em>p</em> as
+<em>n → ∞</em>, where <em>p = Pr(Xᵢ = 1)</em>, in the case of the relative frequency
+ΣXᵢ / n.</p>
+<p><strong>Model.</strong> Hacker <em>j</em> (j = 1…m) attacks the systems one after
+the other. Attack <em>i</em> succeeds (Xᵢ = 1) with probability <em>p</em>, independently
+of all the others. On failure, Xᵢ = 0 in the first encoding, or Xᵢ = −1 (a penalty) in
+the second one. The sequence of partial scores of one hacker, for i = 1, 2, …, n, is
+that hacker's <strong>trajectory</strong>.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Simulation parameters</h2>
+<section>
+<form id="params" class="controls">
+  <label for="m">m — number of hackers
+    <input id="m" type="number" min="10" max="5000" step="10" value="500"></label>
+  <label for="n">n — number of systems
+    <input id="n" type="number" min="10" max="20000" step="10" value="5000"></label>
+  <label for="p">p = Pr(Xᵢ = 1)
+    <input id="p" type="number" min="0.01" max="0.99" step="0.01" value="0.3"></label>
+  <label for="enc">encoding of Xᵢ
+    <select id="enc">
+      <option value="01">Xᵢ ∈ {0, 1}</option>
+      <option value="pm">Xᵢ ∈ {−1, +1}</option>
+    </select></label>
+  <label for="eps">ε (tolerance)
+    <input id="eps" type="number" min="0.005" max="0.5" step="0.005" value="0.02"></label>
+  <label for="seed">random seed
+    <input id="seed" type="number" min="1" step="1" value="2026"></label>
+  <button type="submit">Run simulation</button>
+</form>
+<p class="muted" id="runInfo"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 1 — Trajectories of the three scores</h2>
+<section>
+<p>Each line is one hacker (the first 40 are drawn). The shaded band is the theoretical
+mean ± 2 standard deviations at each step: it shows how the spread of the score
+evolves with the number of attacked systems.</p>
+<div class="legend">
+  <span><span class="sw" style="background:var(--line2)"></span>hacker trajectories</span>
+  <span><span class="sw" style="background:var(--accent)"></span>theoretical mean</span>
+  <span><span class="sw" style="background:var(--band);height:10px"></span>mean ± 2 sd</span>
+</div>
+<h3>(1) Relative frequency ΣXᵢ / n</h3>
+<canvas id="traj1" class="traj" aria-label="Trajectories of the relative frequency"></canvas>
+<h3>(2) Raw score ΣXᵢ</h3>
+<canvas id="traj2" class="traj" aria-label="Trajectories of the raw score"></canvas>
+<h3>(3) Normalised score ΣXᵢ / √n</h3>
+<canvas id="traj3" class="traj" aria-label="Trajectories of the score divided by root n"></canvas>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 2 — Distribution of the scores as n grows</h2>
+<section>
+<p>Histograms of the <em>m</em> scores at increasing numbers of systems. Within a row,
+every panel uses an x-axis of the <strong>same width</strong>, centred on the theoretical
+mean, so the change in spread can be compared directly. The dark curve is the normal
+density with the theoretical mean and standard deviation.</p>
+<h3>(1) ΣXᵢ / n — the mass collapses onto one point</h3>
+<div class="grid4" id="hist1"></div>
+<h3>(2) ΣXᵢ — the mass spreads out</h3>
+<div class="grid4" id="hist2"></div>
+<h3>(3) ΣXᵢ / √n — the spread stays constant</h3>
+<div class="grid4" id="hist3"></div>
+<h3>Observed vs. theoretical mean and standard deviation</h3>
+<div class="tablewrap"><table id="momTable"></table></div>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 3 — Verification: the mass concentrates on p</h2>
+<section>
+<p>Let <em>fₙ = (number of successes) / n</em> be the relative frequency of successful
+attacks. Convergence in probability means that for every ε &gt; 0</p>
+<p class="formula">Pr( |fₙ − p| &gt; ε ) → 0 &nbsp; as n → ∞</p>
+<p>We estimate this probability as the fraction of the <em>m</em> hackers whose
+frequency lies outside the band <em>p ± ε</em>, and compare it with the Chebyshev bound
+and with the normal approximation.</p>
+<p id="pmNote" class="muted" hidden></p>
+<div class="legend">
+  <span><span class="sw" style="background:var(--accent)"></span>observed fraction outside p ± ε</span>
+  <span><span class="sw" style="background:var(--line2)"></span>Chebyshev bound p(1−p)/(nε²)</span>
+  <span><span class="sw" style="background:var(--muted)"></span>normal approximation</span>
+</div>
+<canvas id="convChart" class="traj" aria-label="Probability of being outside the band versus n"></canvas>
+<div class="tablewrap"><table id="convTable"></table></div>
+<p id="verdict"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 4 — Theory</h2>
+<section>
+<h3>Mean and variance of a single attack</h3>
+<p>With success value 1 and failure value <em>a</em> (a = 0 or a = −1):</p>
+<p class="formula">μ = E[Xᵢ] = p·1 + (1−p)·a &nbsp;&nbsp;&nbsp; σ² = Var(Xᵢ) = (1−a)²·p(1−p)</p>
+<ul>
+<li>Xᵢ ∈ {0, 1}: μ = p, σ² = p(1−p).</li>
+<li>Xᵢ ∈ {−1, +1}: μ = 2p − 1, σ² = 4p(1−p).</li>
+</ul>
+
+<h3>The three scores</h3>
+<p>Since the attacks are independent, E[ΣXᵢ] = nμ and Var(ΣXᵢ) = nσ². Dividing by a
+constant c divides the mean by c and the variance by c²:</p>
+<div class="tablewrap"><table>
+<tr><th>score</th><th>mean</th><th>standard deviation</th><th>as n → ∞</th></tr>
+<tr><td>(1) ΣXᵢ / n</td><td>μ</td><td>σ / √n</td><td>sd → 0: concentrates on μ</td></tr>
+<tr><td>(2) ΣXᵢ</td><td>nμ</td><td>σ √n</td><td>sd → ∞: spreads out</td></tr>
+<tr><td>(3) ΣXᵢ / √n</td><td>√n μ</td><td>σ</td><td>sd constant: stable shape</td></tr>
+</table></div>
+<p>Dividing by <em>n</em> is too strong (everything collapses), not dividing is too weak
+(everything explodes), and dividing by <em>√n</em> is the scaling that keeps the width
+fixed.</p>
+
+<h3>Why the relative frequency converges to p (weak LLN)</h3>
+<p>Chebyshev's inequality states that for any random variable Y with finite variance,
+Pr(|Y − E[Y]| &gt; ε) ≤ Var(Y) / ε². Applied to the relative frequency fₙ, with
+E[fₙ] = p and Var(fₙ) = p(1−p)/n:</p>
+<p class="formula">Pr( |fₙ − p| &gt; ε ) ≤ p(1−p) / (n ε²) → 0 &nbsp; as n → ∞</p>
+<p>This holds for every ε &gt; 0, which is exactly the definition of convergence in
+probability: fₙ → p. In the {−1, +1} encoding the score is ΣXᵢ/n = 2fₙ − 1, so it
+concentrates on 2p − 1, and equivalently the frequency of successes concentrates on p.</p>
+
+<h3>Why the √n scaling gives a bell curve (CLT)</h3>
+<p>The Central Limit Theorem says that (ΣXᵢ − nμ) / (σ√n) converges in distribution to
+N(0, 1). With Xᵢ ∈ {−1, +1} and p = 0.5 we have μ = 0 and σ = 1, so score (3) is
+exactly this quantity: ΣXᵢ / √n → N(0, 1). In the other cases score (3) has the same
+bell shape and constant width, but its centre √n μ moves as n grows.</p>
+
+<h3>Deterministic limit vs. limit in probability</h3>
+<p>For an ordinary function, f(x) → L means: for every ε &gt; 0 there is x₀ such that
+|f(x) − L| &lt; ε for every x &gt; x₀. A single trajectory of a hacker is random, so no
+x₀ can guarantee that <em>every</em> trajectory stays inside the band. Convergence in
+probability asks for less: at step n, the <em>probability</em> (the fraction of
+trajectories) outside the band goes to zero.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Core of the simulation</h2>
+<section>
+<pre><code>// m hackers, n systems, success probability p, failure value a (0 or -1)
+for (let j = 0; j &lt; m; j++) {
+  let successes = 0;
+  for (let i = 1; i &lt;= n; i++) {
+    if (rand() &lt; p) successes++;          // X_i = 1 with probability p
+    if (isCheckpoint[i]) {
+      const S = successes + (i - successes) * a;   // sum of X_1..X_i
+      record(j, i, S / i, S, S / Math.sqrt(i));    // scores (1), (2), (3)
+    }
+  }
+}</code></pre>
+<p class="muted">The generator is a seeded PRNG (mulberry32), so the same seed always
+reproduces the same results.</p>
+</section>
+
+<h2>Conclusions</h2>
+<section>
+<ul>
+<li>The relative frequency ΣXᵢ/n concentrates on its mean: on <em>p</em> with
+Xᵢ ∈ {0, 1}, on 2p − 1 with Xᵢ ∈ {−1, +1}. The fraction of hackers outside p ± ε
+falls towards zero, always below the Chebyshev bound. This is the weak Law of Large
+Numbers, i.e. convergence in probability.</li>
+<li>The raw score ΣXᵢ spreads out like √n: the trajectories open like a fan.</li>
+<li>The score ΣXᵢ/√n keeps a constant width and a bell shape, as predicted by the
+Central Limit Theorem.</li>
+</ul>
+</section>
+</main>
+
+<script>
+(function () {
+"use strict";
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ---------- seeded random generator ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- normal distribution helpers ---------- */
+function erf(x) { // Abramowitz-Stegun 7.1.26
+  const s = Math.sign(x); x = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+            - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return s * y;
+}
+const Phi = z => 0.5 * (1 + erf(z / Math.SQRT2));
+const pdf = (x, mu, sd) => Math.exp(-0.5 * ((x - mu) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+
+/* ---------- the three scores ---------- */
+// S = sum of X_1..X_t ; returns score k (1, 2, 3)
+const score = (k, S, t) => k === 1 ? S / t : k === 2 ? S : S / Math.sqrt(t);
+// theoretical mean / sd of score k after t attacks
+function theory(k, t, mu, sigma) {
+  if (k === 1) return { mean: mu, sd: sigma / Math.sqrt(t) };
+  if (k === 2) return { mean: t * mu, sd: sigma * Math.sqrt(t) };
+  return { mean: Math.sqrt(t) * mu, sd: sigma };
+}
+
+/* ---------- simulation ---------- */
+let R = null; // last results
+
+function simulate(m, n, p, a, seed) {
+  const rand = mulberry32(seed);
+  // checkpoints for histograms: n/1000, n/100, n/10, n
+  const cps = [...new Set([n / 1000, n / 100, n / 10, n].map(v => Math.max(1, Math.round(v))))];
+  // log-spaced steps for the convergence chart
+  const vts = new Set(cps);
+  for (let i = 0; i <= 50; i++) vts.add(Math.max(1, Math.round(Math.pow(n, i / 50))));
+  const ts = [...vts].sort((x, y) => x - y);
+  const tIdx = new Int32Array(n + 1).fill(-1);
+  ts.forEach((t, i) => { tIdx[t] = i; });
+  const T = ts.length;
+  const succ = new Int32Array(m * T);     // successes of hacker j at step ts[i]
+
+  // drawn trajectories: first D hackers, sampled at up to 500 steps
+  const D = Math.min(m, 40);
+  const nS = Math.min(n, 500);
+  const sIdx = new Int32Array(n + 1).fill(-1);
+  const sSteps = [];
+  for (let i = 0; i < nS; i++) {
+    const k = Math.max(1, Math.round(1 + (n - 1) * i / (nS - 1 || 1)));
+    if (sIdx[k] === -1) { sIdx[k] = sSteps.length; sSteps.push(k); }
+  }
+  const paths = [];
+
+  for (let j = 0; j < m; j++) {
+    let s = 0;
+    const path = j < D ? new Int32Array(sSteps.length) : null;
+    for (let i = 1; i <= n; i++) {
+      if (rand() < p) s++;
+      const ti = tIdx[i];
+      if (ti >= 0) succ[j * T + ti] = s;
+      if (path && sIdx[i] >= 0) path[sIdx[i]] = s;
+    }
+    if (path) paths.push(path);
+  }
+  return { m, n, p, a, cps, ts, T, succ, paths, sSteps,
+           mu: p + (1 - p) * a, sigma: (1 - a) * Math.sqrt(p * (1 - p)) };
+}
+
+// all m values of score k at step t (t must be one of ts)
+function scoresAt(k, t) {
+  const i = R.ts.indexOf(t), out = new Float64Array(R.m);
+  for (let j = 0; j < R.m; j++) {
+    const s = R.succ[j * R.T + i];
+    out[j] = score(k, s + (t - s) * R.a, t);
+  }
+  return out;
+}
+function meanSd(arr) {
+  let s = 0, q = 0;
+  for (const v of arr) s += v;
+  const mean = s / arr.length;
+  for (const v of arr) q += (v - mean) ** 2;
+  return { mean, sd: Math.sqrt(q / (arr.length - 1)) };
+}
+
+/* ---------- drawing helpers ---------- */
+function setup(c) {
+  const r = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.round(w * r); c.height = Math.round(h * r);
+  const x = c.getContext("2d"); x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  return { x, w, h };
+}
+function niceTicks(lo, hi, count) {
+  const span = hi - lo; if (span <= 0) return [lo];
+  const raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const fmt = v => {
+  const a = Math.abs(v);
+  if (a === 0) return "0";
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  if (a >= 1) return v.toFixed(2).replace(/\.?0+$/, "");
+  return v.toFixed(3).replace(/\.?0+$/, "");
+};
+function axes(x, box, xs, ys, X, Y, xlab) {
+  x.font = "11px ui-monospace, Menlo, monospace";
+  x.strokeStyle = css("--border"); x.fillStyle = css("--muted"); x.lineWidth = 1;
+  xs.forEach(v => { x.beginPath(); x.moveTo(X(v), box.T); x.lineTo(X(v), box.T + box.ph); x.stroke();
+    x.textAlign = "center"; x.fillText(typeof v === "string" ? v : fmt(v), X(v), box.T + box.ph + 14); });
+  ys.forEach(v => { x.beginPath(); x.moveTo(box.L, Y(v)); x.lineTo(box.L + box.pw, Y(v)); x.stroke();
+    x.textAlign = "right"; x.fillText(fmt(v), box.L - 6, Y(v) + 4); });
+  if (xlab) { x.textAlign = "right"; x.fillText(xlab, box.L + box.pw - 4, box.T + box.ph - 6); }
+}
+
+/* ---------- Part 1: trajectories ---------- */
+function drawTraj(k) {
+  const c = $("traj" + k), { x, w, h } = setup(c);
+  const box = { L: 56, R: 12, T: 10, B: 24 }; box.pw = w - box.L - box.R; box.ph = h - box.T - box.B;
+  const { n, a, mu, sigma, sSteps, paths } = R;
+  // y-range: observed paths + band
+  let lo = Infinity, hi = -Infinity;
+  paths.forEach(path => sSteps.forEach((t, i) => {
+    const v = score(k, path[i] + (t - path[i]) * a, t); if (v < lo) lo = v; if (v > hi) hi = v; }));
+  sSteps.forEach(t => { if (k === 1 && t < 20) return; const th = theory(k, t, mu, sigma);
+    lo = Math.min(lo, th.mean - 2 * th.sd); hi = Math.max(hi, th.mean + 2 * th.sd); });
+  if (k === 1) { lo = Math.max(lo, a); hi = Math.min(hi, 1); }
+  const pad = (hi - lo) * 0.05 || 0.5; lo -= pad; hi += pad;
+  const X = t => box.L + box.pw * t / n, Y = v => box.T + box.ph * (1 - (v - lo) / (hi - lo));
+  axes(x, box, niceTicks(0, n, 6), niceTicks(lo, hi, 5), X, Y, "n (systems attacked)");
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  // band
+  x.fillStyle = css("--band"); x.beginPath();
+  sSteps.forEach((t, i) => { const th = theory(k, t, mu, sigma); const px = X(t), py = Y(th.mean + 2 * th.sd);
+    i ? x.lineTo(px, py) : x.moveTo(px, py); });
+  for (let i = sSteps.length - 1; i >= 0; i--) { const t = sSteps[i], th = theory(k, t, mu, sigma);
+    x.lineTo(X(t), Y(th.mean - 2 * th.sd)); }
+  x.closePath(); x.fill();
+  // paths
+  x.strokeStyle = css("--line2"); x.globalAlpha = 0.45; x.lineWidth = 1;
+  paths.forEach(path => { x.beginPath();
+    sSteps.forEach((t, i) => { const v = score(k, path[i] + (t - path[i]) * a, t);
+      i ? x.lineTo(X(t), Y(v)) : x.moveTo(X(t), Y(v)); }); x.stroke(); });
+  x.globalAlpha = 1;
+  // mean
+  x.strokeStyle = css("--accent"); x.lineWidth = 2; x.setLineDash([6, 4]); x.beginPath();
+  sSteps.forEach((t, i) => { const v = theory(k, t, mu, sigma).mean; i ? x.lineTo(X(t), Y(v)) : x.moveTo(X(t), Y(v)); });
+  x.stroke(); x.setLineDash([]); x.restore();
+}
+
+/* ---------- Part 2: histograms ---------- */
+function buildHistGrid() {
+  for (let k = 1; k <= 3; k++) {
+    const g = $("hist" + k); g.innerHTML = "";
+    R.cps.forEach(t => {
+      const f = document.createElement("figure");
+      f.innerHTML = '<canvas class="hist" aria-label="Histogram of score ' + k + ' at n = ' + t +
+        '"></canvas><figcaption></figcaption>';
+      g.appendChild(f);
+    });
+  }
+}
+function drawHists(k) {
+  const { a, mu, sigma, cps } = R;
+  // common half-width for the row
+  let W = Math.max(...cps.map(t => 4.5 * theory(k, t, mu, sigma).sd));
+  if (k === 1) W = Math.min(W, (1 - a) * 0.75);
+  const figs = $("hist" + k).querySelectorAll("figure");
+  cps.forEach((t, ci) => {
+    const c = figs[ci].querySelector("canvas"), { x, w, h } = setup(c);
+    const box = { L: 8, R: 8, T: 8, B: 22 }; box.pw = w - box.L - box.R; box.ph = h - box.T - box.B;
+    const th = theory(k, t, mu, sigma), lo = th.mean - W, hi = th.mean + W;
+    const vals = scoresAt(k, t);
+    // bins aligned to the lattice of possible values
+    const delta = k === 1 ? (1 - a) / t : k === 2 ? (1 - a) : (1 - a) / Math.sqrt(t);
+    const origin = k === 1 ? a : k === 2 ? a * t : a * Math.sqrt(t);
+    const bw = delta * Math.max(1, Math.ceil((2 * W / 45) / delta));
+    const start = origin - delta / 2 + Math.floor((lo - (origin - delta / 2)) / bw) * bw;
+    const nb = Math.ceil((hi - start) / bw) + 1, cnt = new Array(nb).fill(0);
+    for (const v of vals) { const b = Math.floor((v - start) / bw + 1e-9); if (b >= 0 && b < nb) cnt[b]++; }
+    const frac = cnt.map(v => v / vals.length);
+    const curveMax = pdf(th.mean, th.mean, th.sd) * bw;
+    const ymax = Math.max(...frac, Math.min(curveMax, 1)) * 1.1 || 1;
+    const X = v => box.L + box.pw * (v - lo) / (hi - lo), Y = v => box.T + box.ph * (1 - v / ymax);
+    axes(x, box, niceTicks(lo, hi, 4), [], X, Y);
+    x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+    x.fillStyle = css("--accent"); x.globalAlpha = 0.75;
+    frac.forEach((v, i) => { if (!v) return; const x0 = X(start + i * bw), x1 = X(start + (i + 1) * bw);
+      x.fillRect(x0 + 0.5, Y(v), Math.max(1, x1 - x0 - 1), box.T + box.ph - Y(v)); });
+    x.globalAlpha = 1;
+    x.strokeStyle = css("--fg"); x.lineWidth = 1.5; x.beginPath();
+    for (let i = 0; i <= 160; i++) { const v = lo + (hi - lo) * i / 160, y = pdf(v, th.mean, th.sd) * bw;
+      i ? x.lineTo(X(v), Y(y)) : x.moveTo(X(v), Y(y)); }
+    x.stroke(); x.restore();
+    x.strokeStyle = css("--muted"); x.beginPath(); x.moveTo(box.L, box.T + box.ph); x.lineTo(box.L + box.pw, box.T + box.ph); x.stroke();
+    const ms = meanSd(vals);
+    figs[ci].querySelector("figcaption").textContent =
+      "n = " + t + " · mean " + fmt(ms.mean) + " · sd " + fmt(ms.sd);
+  });
+}
+function momentTable() {
+  const { mu, sigma, cps } = R;
+  const names = ["(1) ΣXᵢ/n", "(2) ΣXᵢ", "(3) ΣXᵢ/√n"];
+  let s = "<tr><th>score</th><th>n</th><th>mean (obs)</th><th>mean (theory)</th>" +
+          "<th>sd (obs)</th><th>sd (theory)</th></tr>";
+  for (let k = 1; k <= 3; k++) cps.forEach(t => {
+    const o = meanSd(scoresAt(k, t)), th = theory(k, t, mu, sigma);
+    s += "<tr><td>" + names[k - 1] + "</td><td>" + t + "</td><td>" + o.mean.toFixed(4) +
+         "</td><td>" + th.mean.toFixed(4) + "</td><td>" + o.sd.toFixed(4) + "</td><td>" +
+         th.sd.toFixed(4) + "</td></tr>";
+  });
+  $("momTable").innerHTML = s;
+}
+
+/* ---------- Part 3: concentration on p ---------- */
+let conv = [];
+function computeConv(eps) {
+  const { m, p, ts, T, succ } = R;
+  conv = ts.map((t, i) => {
+    let out = 0, sum = 0;
+    for (let j = 0; j < m; j++) { const f = succ[j * T + i] / t; sum += f; if (Math.abs(f - p) > eps + 1e-12) out++; }
+    const sdF = Math.sqrt(p * (1 - p) / t);
+    return { t, obs: out / m, mean: sum / m, cheb: Math.min(1, p * (1 - p) / (t * eps * eps)),
+             norm: 2 * (1 - Phi(eps / sdF)), sdF };
+  });
+}
+function drawConv() {
+  const c = $("convChart"), { x, w, h } = setup(c);
+  const box = { L: 48, R: 12, T: 10, B: 24 }; box.pw = w - box.L - box.R; box.ph = h - box.T - box.B;
+  const n = R.n, lx = t => Math.log10(t);
+  const X = t => box.L + box.pw * lx(t) / lx(n), Y = v => box.T + box.ph * (1 - v / 1.05);
+  const xt = [1, 10, 100, 1000, 10000].filter(t => t <= n);
+  x.font = "11px ui-monospace, Menlo, monospace";
+  x.strokeStyle = css("--border"); x.fillStyle = css("--muted"); x.lineWidth = 1;
+  xt.forEach(t => { x.beginPath(); x.moveTo(X(t), box.T); x.lineTo(X(t), box.T + box.ph); x.stroke();
+    x.textAlign = "center"; x.fillText(t, X(t), box.T + box.ph + 14); });
+  [0, 0.25, 0.5, 0.75, 1].forEach(v => { x.beginPath(); x.moveTo(box.L, Y(v)); x.lineTo(box.L + box.pw, Y(v)); x.stroke();
+    x.textAlign = "right"; x.fillText(v.toFixed(2), box.L - 6, Y(v) + 4); });
+  x.textAlign = "right"; x.fillText("n (log scale)", box.L + box.pw - 4, box.T + 12);
+  const line = (key, color, width, dash) => { x.strokeStyle = color; x.lineWidth = width; x.setLineDash(dash);
+    x.beginPath(); conv.forEach((d, i) => i ? x.lineTo(X(d.t), Y(d[key])) : x.moveTo(X(d.t), Y(d[key]))); x.stroke(); x.setLineDash([]); };
+  line("cheb", css("--line2"), 2, [6, 4]);
+  line("norm", css("--muted"), 1.5, [2, 3]);
+  line("obs", css("--accent"), 2.5, []);
+  x.fillStyle = css("--accent"); conv.forEach(d => { x.beginPath(); x.arc(X(d.t), Y(d.obs), 2.5, 0, 7); x.fill(); });
+}
+function convTable(eps) {
+  const sel = new Set(R.cps);
+  let s = "<tr><th>n</th><th>mean of fₙ</th><th>sd of fₙ (theory)</th>" +
+          "<th>Pr(|fₙ − p| &gt; ε) observed</th><th>normal approx.</th><th>Chebyshev bound</th></tr>";
+  conv.filter(d => sel.has(d.t)).forEach(d => {
+    s += "<tr><td>" + d.t + "</td><td>" + d.mean.toFixed(4) + "</td><td>" + d.sdF.toFixed(4) +
+         "</td><td>" + d.obs.toFixed(3) + "</td><td>" + d.norm.toFixed(3) + "</td><td>" +
+         d.cheb.toFixed(3) + "</td></tr>";
+  });
+  $("convTable").innerHTML = s;
+  const last = conv[conv.length - 1], first = conv.find(d => sel.has(d.t));
+  const okBound = conv.every(d => d.obs <= d.cheb + 3 / Math.sqrt(R.m));
+  $("verdict").innerHTML = "With ε = " + eps + ", the fraction of hackers outside p ± ε goes from <strong>" +
+    first.obs.toFixed(3) + "</strong> at n = " + first.t + " to <strong>" + last.obs.toFixed(3) +
+    "</strong> at n = " + last.t + ", while the mean of fₙ stays at " + last.mean.toFixed(4) +
+    " (p = " + R.p + "). " + (last.obs < first.obs
+      ? '<span class="ok">The probability mass concentrates on p, as required.</span>'
+      : '<span class="bad">Increase n or ε to see the concentration.</span>') +
+    (okBound ? " The observed values never exceed the Chebyshev bound (up to sampling noise)." : "");
+  const pm = $("pmNote");
+  if (R.a === -1) {
+    pm.hidden = false;
+    pm.textContent = "Encoding {−1, +1}: the score ΣXᵢ/n equals 2fₙ − 1, so it concentrates on 2p − 1 = " +
+      (2 * R.p - 1).toFixed(2) + ". Concentration of the score on 2p − 1 and of fₙ on p are the same statement.";
+  } else pm.hidden = true;
+}
+
+/* ---------- run ---------- */
+function clamp(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
+function run() {
+  const m = Math.round(clamp($("m").value, 10, 5000, 500));
+  const n = Math.round(clamp($("n").value, 10, 20000, 5000));
+  const p = clamp($("p").value, 0.01, 0.99, 0.3);
+  const a = $("enc").value === "pm" ? -1 : 0;
+  const eps = clamp($("eps").value, 0.005, 0.5, 0.02);
+  const seed = Math.round(clamp($("seed").value, 1, 1e9, 2026));
+  const t0 = performance.now();
+  R = simulate(m, n, p, a, seed);
+  computeConv(eps);
+  buildHistGrid();
+  drawAll();
+  momentTable(); convTable(eps);
+  $("runInfo").textContent = m + " hackers × " + n + " systems = " + (m * n).toLocaleString("en") +
+    " simulated attacks in " + Math.round(performance.now() - t0) + " ms. μ = E[Xᵢ] = " +
+    R.mu.toFixed(3) + ", σ = " + R.sigma.toFixed(3) + ".";
+}
+function drawAll() { if (!R) return; [1, 2, 3].forEach(k => { drawTraj(k); drawHists(k); }); drawConv(); }
+
+$("params").addEventListener("submit", e => { e.preventDefault(); run(); });
+$("enc").addEventListener("change", run);
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+run();
+})();
+</script>
+</body>
+</html>
