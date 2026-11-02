@@ -15,6 +15,7 @@ live in the browser.
 |---|-------|------|
 | 2 | Toy ECC cryptography, Caesar cipher, statistical cryptanalysis | [hw2](https://andreatadros.github.io/Statistics/hw2/) |
 | 3 | Penetration scores, Law of Large Numbers, convergence in probability | [hw3](https://andreatadros.github.io/Statistics/hw3/) |
+| 4 | Welford recurrence, continuous penetration scores, mean and variance of the average | [hw4](https://andreatadros.github.io/Statistics/hw4/) |
 
 ## Repository structure
 

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 4 - Statistics</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --muted: #5a5a72;
+    --accent: #7a1f2b;
+    --card: #f5f3f0;
+    --border: #d9d4cc;
+    --code-bg: #14141f;
+    --code-fg: #e8e8f0;
+    --band: rgba(122, 31, 43, 0.12);
+    --line2: #1f5f7a;
+    --good: #2e9e5b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+      --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+      --code-bg: #0c0c14; --code-fg: #e8e8f0;
+      --band: rgba(224, 138, 150, 0.16); --line2: #6cc3e0; --good: #5fd08e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+    --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+    --code-bg: #0c0c14; --code-fg: #e8e8f0;
+    --band: rgba(224, 138, 150, 0.16); --line2: #6cc3e0; --good: #5fd08e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6; padding: 16px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { color: var(--accent); font-size: 1.7rem; margin-top: 0.4em; }
+  h2 { color: var(--accent); font-size: 1.3rem; margin-top: 1.8em;
+       border-bottom: 2px solid var(--border); padding-bottom: 0.2em; }
+  h3 { font-size: 1.05rem; margin-top: 1.4em; }
+  .muted { color: var(--muted); }
+  section { background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin: 18px 0; min-width: 0; }
+  pre { background: var(--code-bg); color: var(--code-fg); padding: 12px 14px;
+        border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg);
+             border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+             overflow-x: auto; white-space: nowrap; }
+  canvas { display: block; width: 100%; background: var(--bg);
+           border: 1px solid var(--border); border-radius: 8px; }
+  .traj { height: 280px; }
+  .hist { height: 170px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 8px 0;
+          font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; }
+  th { background: var(--border); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 12px 16px; align-items: end; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;
+                    color: var(--muted); }
+  input, select { font: inherit; padding: 6px 8px; border-radius: 6px;
+                  border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+  button { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 6px;
+           border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+           cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--line2); outline-offset: 2px; }
+  .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+           gap: 10px; }
+  .grid4 figure { margin: 0; min-width: 0; }
+  .grid4 figcaption { font-size: 0.8rem; color: var(--muted); text-align: center;
+                      font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem;
+            color: var(--muted); margin: 6px 0; }
+  .sw { display: inline-block; width: 16px; height: 4px; vertical-align: middle;
+        margin-right: 6px; border-radius: 2px; }
+  .ok { color: var(--good); font-weight: 600; }
+  .bad { color: var(--accent); font-weight: 600; }
+  [hidden] { display: none !important; }
+  a { color: var(--line2); }
+</style>
+
+</head>
+<body>
+<main>
+<h1>Homework 4 — The Welford recurrence and continuous penetration scores</h1>
+<p class="muted">Statistics — first we derive the online (Welford) update of the mean and of
+the sum of squared deviations. Then we generalise Homework 3: each attack now gives a score
+in (0, 10) drawn from a distribution of our choice, and we verify how the mean and variance
+of the hackers' average scores relate to those of the score distribution. Every mean and
+variance on this page is computed with the Welford recurrence. All results are simulated
+live in your browser.</p>
+<p class="muted">Previous homework: <a href="../hw3/">Homework 3 — penetration scores and
+the Law of Large Numbers</a>.</p>
+
+<!-- ============================================================= -->
+<h2>The assignment</h2>
+<section>
+<p><strong>1.</strong> Starting from SS<sub>n</sub> = Σ<sub>i=1..n</sub> (xᵢ − x̄ₙ)²,
+derive the recursive update of the sum of squared deviations (and of the mean), by adding
+and subtracting the same term x̄ₙ₋₁ inside the square.</p>
+<p><strong>2.</strong> Take the setup of the previous homework (<em>n</em> systems,
+<em>m</em> hackers, each hacker attacks the systems one after the other → trajectories), but
+instead of a score in {0, 1}, each attack gives a score in (0, 10) with some distribution,
+chosen freely; at each step a score is drawn from it. Compute the mean and variance of the
+average score of the trajectories and verify their relationship with the mean and variance
+of the score distribution.</p>
+<p><strong>Constraint.</strong> The naive formulas Σxᵢ / n for the mean and
+Σxᵢ²/n − x̄² for the variance must not be used in the code (overflow, catastrophic
+cancellation). Mean and variance are computed with the Welford recurrence.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 1 — Derivation of the Welford recurrence</h2>
+<section>
+<h3>Notation</h3>
+<p class="formula">x̄ₙ = (1/n) Σ<sub>i=1..n</sub> xᵢ &nbsp;&nbsp;&nbsp;
+SSₙ = Σ<sub>i=1..n</sub> (xᵢ − x̄ₙ)² &nbsp;&nbsp;&nbsp;
+s²ₙ = SSₙ / (n − 1)</p>
+
+<h3>Step 1 — the mean</h3>
+<p>Split off the last observation:</p>
+<p class="formula">n x̄ₙ = Σ<sub>i=1..n−1</sub> xᵢ + xₙ = (n − 1) x̄ₙ₋₁ + xₙ
+&nbsp;⇒&nbsp; x̄ₙ = x̄ₙ₋₁ + (xₙ − x̄ₙ₋₁) / n</p>
+<p>Call δ = xₙ − x̄ₙ₋₁ the deviation of the new value from the old mean. Then the mean moves
+by x̄ₙ − x̄ₙ₋₁ = δ / n. Two facts follow and are used below:</p>
+<p class="formula">(a) xₙ − x̄ₙ = δ − δ/n = (n − 1) δ / n &nbsp;&nbsp;&nbsp;
+(b) Σ<sub>i=1..n−1</sub> (xᵢ − x̄ₙ₋₁) = 0</p>
+
+<h3>Step 2 — add and subtract x̄ₙ₋₁ inside the square</h3>
+<p class="formula">xᵢ − x̄ₙ = (xᵢ − x̄ₙ₋₁) − (x̄ₙ − x̄ₙ₋₁) = (xᵢ − x̄ₙ₋₁) − δ/n</p>
+<p>Squaring and summing over i = 1, …, n:</p>
+<p class="formula">SSₙ = Σ<sub>i=1..n</sub> (xᵢ − x̄ₙ₋₁)² − 2 (δ/n) Σ<sub>i=1..n</sub>
+(xᵢ − x̄ₙ₋₁) + n (δ/n)²</p>
+
+<h3>Step 3 — simplify the three terms</h3>
+<ul>
+<li>First term: the first n − 1 summands are exactly SSₙ₋₁, and the last one is
+(xₙ − x̄ₙ₋₁)² = δ². So it equals SSₙ₋₁ + δ².</li>
+<li>Second term: by (b) the first n − 1 deviations sum to zero, and only the last one, δ,
+is left. So it equals −2 (δ/n) · δ = −2δ²/n.</li>
+<li>Third term: n · δ²/n² = δ²/n.</li>
+</ul>
+<p class="formula">SSₙ = SSₙ₋₁ + δ² − 2δ²/n + δ²/n = SSₙ₋₁ + δ² (n − 1)/n</p>
+
+<h3>Result</h3>
+<p>Using (a), δ (n − 1)/n = xₙ − x̄ₙ, so the same update can be written without fractions.
+This is the form used in code:</p>
+<p class="formula">x̄ₙ = x̄ₙ₋₁ + (xₙ − x̄ₙ₋₁) / n &nbsp;&nbsp;&nbsp;
+SSₙ = SSₙ₋₁ + (xₙ − x̄ₙ₋₁)(xₙ − x̄ₙ)</p>
+<p>The recursion starts from x̄₀ = 0 and SS₀ = 0. At the first step it gives x̄₁ = x₁ and
+SS₁ = 0, as it should. The variance is s²ₙ = SSₙ / (n − 1), or SSₙ / n for the population
+version. Each step costs O(1), the data never need to be stored, and the update only
+involves deviations from the current mean, never the raw sums.</p>
+
+<h3>Why the naive formulas are dangerous</h3>
+<p><strong>Overflow.</strong> Σxᵢ grows with n even when the mean stays bounded. With
+32-bit integers it wraps around after about 2·10⁹. With floating point it reaches ∞ when the
+values are large, while the mean itself would be perfectly representable.
+Welford never forms the sum: it only stores the mean, which stays on the scale of the
+data.</p>
+<p><strong>Catastrophic cancellation.</strong> The formula Σxᵢ² − (Σxᵢ)²/n subtracts two
+huge, almost equal numbers. When the data have a large mean compared to their spread, the
+significant digits cancel and only rounding errors are left. The result can even be
+negative. The table below runs live in your browser (64-bit doubles) on the data
+K + {4, 7, 13, 16}, whose true sample variance is 30 for every shift K.</p>
+<div class="tablewrap"><table id="cancelTable"></table></div>
+<p class="muted">Shifting the data does not change the variance. The Welford result stays
+exact for every K, while the textbook formula degrades and turns negative at K = 10⁹.</p>
+<div class="tablewrap"><table id="overflowTable"></table></div>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 2 — Simulation parameters</h2>
+<section>
+<form id="params" class="controls">
+  <label for="m">m — number of hackers
+    <input id="m" type="number" min="10" max="5000" step="10" value="500"></label>
+  <label for="n">n — number of systems
+    <input id="n" type="number" min="10" max="20000" step="10" value="5000"></label>
+  <label for="dist">score distribution
+    <select id="dist">
+      <option value="unif">Uniform(0, 10), continuous</option>
+      <option value="beta">10 · Beta(α, β), continuous</option>
+      <option value="dunif">Uniform on {1, 2, …, 10}</option>
+      <option value="binom">Binomial(10, p) on {0, …, 10}</option>
+      <option value="bern">10 · Bernoulli(p): the HW3 case</option>
+    </select></label>
+  <label for="alpha" class="pBeta">α
+    <input id="alpha" type="number" min="0.2" max="20" step="0.1" value="2"></label>
+  <label for="beta" class="pBeta">β
+    <input id="beta" type="number" min="0.2" max="20" step="0.1" value="5"></label>
+  <label for="p" class="pP">p
+    <input id="p" type="number" min="0.01" max="0.99" step="0.01" value="0.3"></label>
+  <label for="seed">random seed
+    <input id="seed" type="number" min="1" step="1" value="2026"></label>
+  <button type="submit">Run simulation</button>
+</form>
+<p class="muted" id="runInfo"></p>
+<p class="muted">The two continuous options take values in the open interval (0, 10). The
+discrete ones cover the readings 1–10 and 0–10 of the assignment. With
+10 · Bernoulli(p) the score is 10 on success and 0 on failure, so the average score is
+exactly 10 times the relative frequency of Homework 3: that homework is a special case of
+this one.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 3 — The score distribution</h2>
+<section>
+<p>Histogram of all <em>m · n</em> simulated scores, with the theoretical density (or
+probability mass) overlaid. Its mean μ and variance σ² are the targets of the
+verification.</p>
+<canvas id="distChart" class="traj" aria-label="Histogram of the single-attack score"></canvas>
+<div class="tablewrap"><table id="distTable"></table></div>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 4 — Trajectories of the average score</h2>
+<section>
+<p>Hacker <em>j</em> attacks the systems one after the other. After <em>t</em> attacks
+their average score is X̄ₜ⁽ʲ⁾ = (1/t) Σ<sub>i=1..t</sub> Xᵢ⁽ʲ⁾, updated at each step
+with the Welford recurrence. Each line is one hacker (the first 40 are drawn). The band
+is μ ± 2σ/√t.</p>
+<div class="legend">
+  <span><span class="sw" style="background:var(--line2)"></span>hacker trajectories</span>
+  <span><span class="sw" style="background:var(--accent)"></span>μ</span>
+  <span><span class="sw" style="background:var(--band);height:10px"></span>μ ± 2σ/√t</span>
+</div>
+<canvas id="trajChart" class="traj" aria-label="Trajectories of the average score"></canvas>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 5 — Mean and variance of the average score</h2>
+<section>
+<p>At each checkpoint <em>t</em> we have <em>m</em> average scores, one per hacker. Their
+mean and variance across hackers are computed with the Welford recurrence, updating once per
+hacker. The expected relationship with the score distribution is</p>
+<p class="formula">E[X̄ₜ] = μ &nbsp;&nbsp;&nbsp; Var(X̄ₜ) = σ² / t
+&nbsp;&nbsp;⇔&nbsp;&nbsp; t · Var(X̄ₜ) = σ²</p>
+<h3>Distribution of X̄ₜ across hackers</h3>
+<p>Within a row of panels the x-axis has the same width, centred on μ. The dark curve is
+the normal density N(μ, σ²/t).</p>
+<div class="grid4" id="histGrid"></div>
+<h3>Variance of the average score against t (log–log scale)</h3>
+<div class="legend">
+  <span><span class="sw" style="background:var(--accent)"></span>observed Var(X̄ₜ) across hackers</span>
+  <span><span class="sw" style="background:var(--line2)"></span>theory σ²/t</span>
+  <span><span class="sw" style="background:var(--band);height:10px"></span>± 2 standard errors of the sample variance</span>
+</div>
+<canvas id="varChart" class="traj" aria-label="Variance of the average score versus t"></canvas>
+<p class="muted">On a log–log scale σ²/t is a straight line with slope −1. The observed
+points follow it. The band shows the sampling error of a variance estimated from
+<em>m</em> hackers, roughly Var · √(2/(m − 1)).</p>
+<h3>Numerical check</h3>
+<div class="tablewrap"><table id="momTable"></table></div>
+<h3>Variance inside one trajectory</h3>
+<p>The same recurrence, run along a single trajectory, also gives that hacker's sample
+variance s²ⱼ = SSₙ / (n − 1) of their n scores. It estimates σ² directly.</p>
+<div class="tablewrap"><table id="withinTable"></table></div>
+<p id="verdict"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 6 — Theory</h2>
+<section>
+<h3>Mean and variance of the average score</h3>
+<p>The scores X₁, …, Xₜ of one hacker are independent and identically distributed with
+mean μ and variance σ². By linearity of expectation, and since the variance of a sum of
+independent variables is the sum of the variances:</p>
+<p class="formula">E[X̄ₜ] = (1/t) · t μ = μ &nbsp;&nbsp;&nbsp;
+Var(X̄ₜ) = (1/t²) · t σ² = σ² / t</p>
+<p>So the average score is centred on the mean of the score distribution, and its spread
+shrinks like σ/√t. By Chebyshev, Pr(|X̄ₜ − μ| &gt; ε) ≤ σ²/(tε²) → 0: the weak Law of Large
+Numbers holds for any score distribution with finite variance, not only for Bernoulli
+scores. By the CLT, (X̄ₜ − μ)/(σ/√t) → N(0, 1), which is why the histograms in Part 5 are
+bell-shaped even when the score distribution is skewed or discrete.</p>
+
+<h3>The distributions used here</h3>
+<div class="tablewrap"><table>
+<tr><th>distribution</th><th>support</th><th>μ</th><th>σ²</th></tr>
+<tr><td>Uniform(0, 10)</td><td>(0, 10)</td><td>5</td><td>100/12 ≈ 8.333</td></tr>
+<tr><td>10 · Beta(α, β)</td><td>(0, 10)</td><td>10α/(α+β)</td><td>100αβ / ((α+β)²(α+β+1))</td></tr>
+<tr><td>Uniform on {1, …, 10}</td><td>{1, …, 10}</td><td>5.5</td><td>(10² − 1)/12 = 8.25</td></tr>
+<tr><td>Binomial(10, p)</td><td>{0, …, 10}</td><td>10p</td><td>10p(1 − p)</td></tr>
+<tr><td>10 · Bernoulli(p)</td><td>{0, 10}</td><td>10p</td><td>100p(1 − p)</td></tr>
+</table></div>
+<p>For the last row, X̄ₜ = 10 fₜ, where fₜ is the relative frequency of Homework 3. The
+general results give E[X̄ₜ] = 10p and Var(X̄ₜ) = 100 p(1 − p)/t, that is E[fₜ] = p and
+Var(fₜ) = p(1 − p)/t: exactly the formulas of the previous homework.</p>
+
+<h3>Within-trajectory variance</h3>
+<p>The sample variance s² = SSₙ/(n − 1) is an unbiased estimator of σ²: E[s²] = σ². The
+divisor n − 1 compensates for measuring deviations from x̄ₙ, which is itself fitted to the
+same data. So the average of the m values s²ⱼ should be close to σ², and each single s²ⱼ
+gets closer to σ² as n grows.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Core of the simulation</h2>
+<section>
+<pre><code>// Welford update: one observation x into the state {k, mean, ss}
+function push(st, x) {
+  st.k += 1;
+  const delta = x - st.mean;          // x_k − mean_{k−1}
+  st.mean += delta / st.k;            // mean_k
+  st.ss += delta * (x - st.mean);     // SS_k = SS_{k−1} + (x − mean_{k−1})(x − mean_k)
+}
+
+for (let j = 0; j &lt; m; j++) {        // hacker j
+  const traj = { k: 0, mean: 0, ss: 0 };
+  for (let i = 1; i &lt;= n; i++) {
+    push(traj, draw());               // score of attack i, drawn from the chosen distribution
+    if (isCheckpoint[i]) push(across[i], traj.mean);   // Welford across hackers
+  }
+  push(withinVar, traj.ss / (n - 1)); // sample variance of hacker j
+}
+// across[t].mean ≈ μ  and  across[t].ss / (m − 1) ≈ σ² / t</code></pre>
+<p class="muted">No sum of the scores and no sum of squares is ever formed. The generator
+is a seeded PRNG (mulberry32). Beta variates come from two Gamma variates
+(Marsaglia–Tsang method), so the same seed always reproduces the same results.</p>
+</section>
+
+<h2>Conclusions</h2>
+<section>
+<ul>
+<li>The Welford recurrence x̄ₙ = x̄ₙ₋₁ + (xₙ − x̄ₙ₋₁)/n,
+SSₙ = SSₙ₋₁ + (xₙ − x̄ₙ₋₁)(xₙ − x̄ₙ) follows from adding and subtracting x̄ₙ₋₁ inside the
+square. It is exact, works in a single pass, and avoids the overflow and cancellation of the
+textbook formulas.</li>
+<li>For any score distribution with mean μ and variance σ², the average score of a
+trajectory after t attacks has mean μ and variance σ²/t. The simulation confirms that
+t · Var(X̄ₜ) stays at σ² for every t.</li>
+<li>Homework 3 is the special case of a two-valued score. The same LLN and CLT behaviour
+appears with continuous, skewed and discrete scores.</li>
+</ul>
+</section>
+</main>
+
+<script>
+(function () {
+"use strict";
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ---------- Welford recurrence (used for every mean / variance on the page) ---------- */
+const W = () => ({ k: 0, mean: 0, ss: 0 });
+function push(st, x) {
+  st.k += 1;
+  const delta = x - st.mean;
+  st.mean += delta / st.k;
+  st.ss += delta * (x - st.mean);
+}
+const wVar = st => st.k > 1 ? st.ss / (st.k - 1) : 0;
+function welford(arr) { const st = W(); for (const v of arr) push(st, v); return st; }
+
+/* ---------- Part 1 demo: textbook formula vs Welford ---------- */
+function cancelDemo() {
+  const base = [4, 7, 13, 16];
+  let s = "<tr><th>shift K</th><th>data</th><th>textbook (Σx² − (Σx)²/n)/(n−1)</th>" +
+          "<th>Welford SSₙ/(n−1)</th><th>true value</th></tr>";
+  [0, 1e6, 1e8, 1e9, 1e10, 1e12].forEach(K => {
+    const x = base.map(v => v + K), n = x.length;
+    let sum = 0, sq = 0;                       // naive version, shown only for comparison
+    for (const v of x) { sum += v; sq += v * v; }
+    const naive = (sq - sum * sum / n) / (n - 1);
+    const w = wVar(welford(x));
+    const kStr = K === 0 ? "0" : "10" + String(Math.log10(K)).replace(/\d/g, d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+    s += "<tr><td>" + kStr + "</td><td>K + {4, 7, 13, 16}</td><td class='" +
+         (Math.abs(naive - 30) < 1e-9 ? "ok" : "bad") + "'>" + naive.toPrecision(8) +
+         "</td><td class='" + (Math.abs(w - 30) < 1e-9 ? "ok" : "bad") + "'>" +
+         w.toPrecision(8) + "</td><td>30</td></tr>";
+  });
+  $("cancelTable").innerHTML = s;
+
+  const big = [1.5e308, 1.6e308, 1.7e308];
+  let sum = 0; for (const v of big) sum += v;
+  const wm = welford(big).mean;
+  $("overflowTable").innerHTML =
+    "<tr><th>data</th><th>naive mean Σx/n</th><th>Welford mean</th><th>true value</th></tr>" +
+    "<tr><td>{1.5, 1.6, 1.7} · 10³⁰⁸</td><td class='bad'>" + (sum / big.length) +
+    "</td><td class='ok'>" + wm.toPrecision(6) + "</td><td>1.6e+308</td></tr>";
+}
+
+/* ---------- seeded random generators ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function makeNormal(rand) {             // Box–Muller with a cached second value
+  let spare = null;
+  return () => {
+    if (spare !== null) { const v = spare; spare = null; return v; }
+    let u; do { u = rand(); } while (u === 0);
+    const r = Math.sqrt(-2 * Math.log(u)), th = 2 * Math.PI * rand();
+    spare = r * Math.sin(th); return r * Math.cos(th);
+  };
+}
+function makeGamma(rand, normal) {      // Marsaglia–Tsang
+  const g = k => {
+    if (k < 1) { let u; do { u = rand(); } while (u === 0); return g(k + 1) * Math.pow(u, 1 / k); }
+    const d = k - 1 / 3, c = 1 / Math.sqrt(9 * d);
+    for (;;) {
+      let x, v; do { x = normal(); v = 1 + c * x; } while (v <= 0);
+      v = v * v * v; const u = rand();
+      if (u < 1 - 0.0331 * x ** 4) return d * v;
+      if (u > 0 && Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
+    }
+  };
+  return g;
+}
+function lgamma(z) {                    // Lanczos approximation
+  const c = [676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+             12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lgamma(1 - z);
+  z -= 1; let x = 0.99999999999980993;
+  for (let i = 0; i < 8; i++) x += c[i] / (z + i + 1);
+  const t = z + 7.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+const pdf = (x, mu, sd) => Math.exp(-0.5 * ((x - mu) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+function binomPmf(k, n, p) {
+  return Math.exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1) + k * Math.log(p) + (n - k) * Math.log(1 - p));
+}
+
+/* ---------- score distributions ---------- */
+// each: draw(), mu, var, discrete values (or null), density / pmf
+function makeDist(kind, al, be, p, rand) {
+  const normal = makeNormal(rand), gamma = makeGamma(rand, normal);
+  switch (kind) {
+    case "unif": {
+      return { name: "Uniform(0, 10)", draw: () => { let u; do { u = rand(); } while (u === 0); return 10 * u; },
+               mu: 5, v: 100 / 12, values: null, dens: x => (x > 0 && x < 10 ? 0.1 : 0) };
+    }
+    case "beta": {
+      const lB = lgamma(al) + lgamma(be) - lgamma(al + be), s = al + be;
+      return { name: "10 · Beta(" + al + ", " + be + ")",
+               draw: () => { const a = gamma(al), b = gamma(be); return 10 * a / (a + b); },
+               mu: 10 * al / s, v: 100 * al * be / (s * s * (s + 1)), values: null,
+               dens: x => { if (x <= 0 || x >= 10) return 0; const y = x / 10;
+                 return Math.exp((al - 1) * Math.log(y) + (be - 1) * Math.log(1 - y) - lB) / 10; } };
+    }
+    case "dunif": {
+      const vals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      return { name: "Uniform on {1, …, 10}", draw: () => 1 + Math.floor(10 * rand()),
+               mu: 5.5, v: 99 / 12, values: vals, pmf: () => 0.1 };
+    }
+    case "binom": {
+      const vals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      return { name: "Binomial(10, " + p + ")",
+               draw: () => { let k = 0; for (let i = 0; i < 10; i++) if (rand() < p) k++; return k; },
+               mu: 10 * p, v: 10 * p * (1 - p), values: vals, pmf: k => binomPmf(k, 10, p) };
+    }
+    default: {
+      return { name: "10 · Bernoulli(" + p + ")", draw: () => (rand() < p ? 10 : 0),
+               mu: 10 * p, v: 100 * p * (1 - p), values: [0, 10], pmf: k => (k === 10 ? p : 1 - p) };
+    }
+  }
+}
+
+/* ---------- simulation ---------- */
+let R = null;
+function simulate(m, n, D, rand) {
+  const cps = [...new Set([n / 1000, n / 100, n / 10, n].map(v => Math.max(2, Math.round(v))))];
+  const vts = new Set(cps);
+  for (let i = 0; i <= 40; i++) vts.add(Math.max(2, Math.round(Math.pow(n, i / 40))));
+  const ts = [...vts].sort((x, y) => x - y), T = ts.length;
+  const tIdx = new Int32Array(n + 1).fill(-1); ts.forEach((t, i) => { tIdx[t] = i; });
+  const vals = new Float64Array(m * T);           // average score of hacker j at step ts[i]
+  const across = ts.map(() => W());               // Welford across hackers, per checkpoint
+  const within = W();                             // Welford over the m within-trajectory variances
+  const withinVals = new Float64Array(m);
+  const all = W();                                // Welford over all m·n scores
+
+  // histogram of single scores
+  const NB = 50, binsC = new Float64Array(NB);
+  const binsD = D.values ? new Map(D.values.map(v => [v, 0])) : null;
+
+  const nD = Math.min(m, 40), nS = Math.min(n, 500);
+  const sIdx = new Int32Array(n + 1).fill(-1), sSteps = [];
+  for (let i = 0; i < nS; i++) {
+    const k = Math.max(1, Math.round(1 + (n - 1) * i / (nS - 1 || 1)));
+    if (sIdx[k] === -1) { sIdx[k] = sSteps.length; sSteps.push(k); }
+  }
+  const paths = [];
+
+  for (let j = 0; j < m; j++) {
+    const tr = W();
+    const path = j < nD ? new Float64Array(sSteps.length) : null;
+    for (let i = 1; i <= n; i++) {
+      const x = D.draw();
+      push(tr, x); push(all, x);
+      if (binsD) binsD.set(x, binsD.get(x) + 1);
+      else binsC[Math.min(NB - 1, Math.floor(x / 10 * NB))]++;
+      const ti = tIdx[i];
+      if (ti >= 0) { vals[j * T + ti] = tr.mean; push(across[ti], tr.mean); }
+      if (path && sIdx[i] >= 0) path[sIdx[i]] = tr.mean;
+    }
+    if (path) paths.push(path);
+    const s2 = tr.ss / (n - 1);
+    withinVals[j] = s2; push(within, s2);
+  }
+  return { m, n, D, mu: D.mu, v: D.v, sigma: Math.sqrt(D.v), cps, ts, T, vals, across,
+           within, withinVals, all, NB, binsC, binsD, paths, sSteps };
+}
+function valsAt(t) {
+  const i = R.ts.indexOf(t), out = new Float64Array(R.m);
+  for (let j = 0; j < R.m; j++) out[j] = R.vals[j * R.T + i];
+  return out;
+}
+
+/* ---------- drawing helpers (as in Homework 3) ---------- */
+function setup(c) {
+  const r = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.round(w * r); c.height = Math.round(h * r);
+  const x = c.getContext("2d"); x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  return { x, w, h };
+}
+function niceTicks(lo, hi, count) {
+  const span = hi - lo; if (span <= 0) return [lo];
+  const raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const fmt = v => {
+  const a = Math.abs(v);
+  if (a === 0) return "0";
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  if (a >= 1) return v.toFixed(2).replace(/\.?0+$/, "");
+  return v.toFixed(3).replace(/\.?0+$/, "");
+};
+function axes(x, box, xs, ys, X, Y, xlab, xfmt, yfmt) {
+  x.font = "11px ui-monospace, Menlo, monospace";
+  x.strokeStyle = css("--border"); x.fillStyle = css("--muted"); x.lineWidth = 1;
+  xs.forEach(v => { x.beginPath(); x.moveTo(X(v), box.T); x.lineTo(X(v), box.T + box.ph); x.stroke();
+    x.textAlign = "center"; x.fillText((xfmt || fmt)(v), X(v), box.T + box.ph + 14); });
+  ys.forEach(v => { x.beginPath(); x.moveTo(box.L, Y(v)); x.lineTo(box.L + box.pw, Y(v)); x.stroke();
+    x.textAlign = "right"; x.fillText((yfmt || fmt)(v), box.L - 6, Y(v) + 4); });
+  if (xlab) { x.textAlign = "right"; x.fillText(xlab, box.L + box.pw - 4, box.T + box.ph - 6); }
+}
+const mkBox = (w, h, L) => { const b = { L: L || 56, R: 12, T: 10, B: 24 };
+  b.pw = w - b.L - b.R; b.ph = h - b.T - b.B; return b; };
+
+/* ---------- Part 3: the score distribution ---------- */
+function drawDist() {
+  const c = $("distChart"), { x, w, h } = setup(c), box = mkBox(w, h, 48);
+  const { D, m, n, NB, binsC, binsD } = R, N = m * n;
+  const X = v => box.L + box.pw * (v + 0.5) / 11;      // axis from −0.5 to 10.5
+  let bars, curve = null, ymax;
+  if (binsD) {
+    bars = D.values.map(v => ({ lo: v - 0.35, hi: v + 0.35, y: binsD.get(v) / N, th: D.pmf(v) }));
+    ymax = Math.max(...bars.map(b => Math.max(b.y, b.th)));
+  } else {
+    const bw = 10 / NB;
+    bars = Array.from(binsC, (cnt, i) => ({ lo: i * bw, hi: (i + 1) * bw, y: cnt / N / bw }));
+    curve = []; for (let i = 1; i < 400; i++) { const v = 10 * i / 400; curve.push([v, D.dens(v)]); }
+    ymax = Math.max(...bars.map(b => b.y), ...curve.map(p => Math.min(p[1], 5 * Math.max(...bars.map(b => b.y)))));
+  }
+  ymax *= 1.1;
+  const Y = v => box.T + box.ph * (1 - v / ymax);
+  axes(x, box, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], niceTicks(0, ymax, 4), X, Y, "score");
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  x.fillStyle = css("--accent"); x.globalAlpha = 0.75;
+  bars.forEach(b => { const x0 = X(b.lo), x1 = X(b.hi);
+    x.fillRect(x0 + 0.5, Y(b.y), Math.max(1, x1 - x0 - 1), box.T + box.ph - Y(b.y)); });
+  x.globalAlpha = 1; x.strokeStyle = css("--fg"); x.lineWidth = 2;
+  if (curve) { x.beginPath(); curve.forEach((p, i) => i ? x.lineTo(X(p[0]), Y(p[1])) : x.moveTo(X(p[0]), Y(p[1]))); x.stroke(); }
+  else bars.forEach(b => { const yy = Y(b.th); x.beginPath(); x.moveTo(X(b.lo) - 3, yy); x.lineTo(X(b.hi) + 3, yy); x.stroke(); });
+  // mean marker
+  x.strokeStyle = css("--line2"); x.setLineDash([6, 4]); x.beginPath();
+  x.moveTo(X(R.mu), box.T); x.lineTo(X(R.mu), box.T + box.ph); x.stroke(); x.setLineDash([]);
+  x.restore();
+  x.fillStyle = css("--muted"); x.textAlign = "left";
+  x.fillText(binsD ? "bars: observed frequency · ticks: theoretical pmf · dashed: μ"
+                   : "bars: observed density · curve: theoretical density · dashed: μ", box.L + 6, box.T + 12);
+
+  $("distTable").innerHTML =
+    "<tr><th></th><th>mean</th><th>variance</th><th>standard deviation</th></tr>" +
+    "<tr><td>theory: " + D.name + "</td><td>" + R.mu.toFixed(4) + "</td><td>" + R.v.toFixed(4) +
+    "</td><td>" + R.sigma.toFixed(4) + "</td></tr>" +
+    "<tr><td>observed, all " + N.toLocaleString("en") + " scores (Welford)</td><td>" + R.all.mean.toFixed(4) +
+    "</td><td>" + wVar(R.all).toFixed(4) + "</td><td>" + Math.sqrt(wVar(R.all)).toFixed(4) + "</td></tr>";
+}
+
+/* ---------- Part 4: trajectories ---------- */
+function drawTraj() {
+  const c = $("trajChart"), { x, w, h } = setup(c), box = mkBox(w, h);
+  const { n, mu, sigma, sSteps, paths } = R;
+  let lo = Infinity, hi = -Infinity;
+  paths.forEach(p => sSteps.forEach((t, i) => { if (t < 5) return; lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); }));
+  sSteps.forEach(t => { if (t < 20) return; lo = Math.min(lo, mu - 2 * sigma / Math.sqrt(t)); hi = Math.max(hi, mu + 2 * sigma / Math.sqrt(t)); });
+  lo = Math.max(lo, 0); hi = Math.min(hi, 10);
+  const pad = (hi - lo) * 0.05 || 0.5; lo -= pad; hi += pad;
+  const X = t => box.L + box.pw * t / n, Y = v => box.T + box.ph * (1 - (v - lo) / (hi - lo));
+  axes(x, box, niceTicks(0, n, 6), niceTicks(lo, hi, 5), X, Y, "t (systems attacked)");
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  x.fillStyle = css("--band"); x.beginPath();
+  sSteps.forEach((t, i) => { const py = Y(mu + 2 * sigma / Math.sqrt(t)); i ? x.lineTo(X(t), py) : x.moveTo(X(t), py); });
+  for (let i = sSteps.length - 1; i >= 0; i--) { const t = sSteps[i]; x.lineTo(X(t), Y(mu - 2 * sigma / Math.sqrt(t))); }
+  x.closePath(); x.fill();
+  x.strokeStyle = css("--line2"); x.globalAlpha = 0.45; x.lineWidth = 1;
+  paths.forEach(p => { x.beginPath(); sSteps.forEach((t, i) => i ? x.lineTo(X(t), Y(p[i])) : x.moveTo(X(t), Y(p[i]))); x.stroke(); });
+  x.globalAlpha = 1;
+  x.strokeStyle = css("--accent"); x.lineWidth = 2; x.setLineDash([6, 4]);
+  x.beginPath(); x.moveTo(X(0), Y(mu)); x.lineTo(X(n), Y(mu)); x.stroke(); x.setLineDash([]);
+  x.restore();
+}
+
+/* ---------- Part 5: histograms, variance chart, tables ---------- */
+function buildHistGrid() {
+  const g = $("histGrid"); g.innerHTML = "";
+  R.cps.forEach(t => {
+    const f = document.createElement("figure");
+    f.innerHTML = '<canvas class="hist" aria-label="Histogram of the average score at t = ' + t +
+      '"></canvas><figcaption></figcaption>';
+    g.appendChild(f);
+  });
+}
+function drawHists() {
+  const { mu, sigma, cps } = R;
+  const Wd = Math.min(5, Math.max(...cps.map(t => 4.5 * sigma / Math.sqrt(t))));
+  const figs = $("histGrid").querySelectorAll("figure");
+  cps.forEach((t, ci) => {
+    const c = figs[ci].querySelector("canvas"), { x, w, h } = setup(c);
+    const box = { L: 8, R: 8, T: 8, B: 22 }; box.pw = w - box.L - box.R; box.ph = h - box.T - box.B;
+    const sd = sigma / Math.sqrt(t), lo = mu - Wd, hi = mu + Wd, vals = valsAt(t);
+    // discrete scores: the average lives on a lattice of step 1/t (or 10/t)
+    const step = R.D.values ? (R.D.values.length === 2 ? 10 : 1) / t : 0;
+    let bw = 2 * Wd / 45; if (step) bw = step * Math.max(1, Math.ceil(bw / step));
+    const start = step ? -step / 2 + Math.floor((lo + step / 2) / bw) * bw : lo;
+    const nb = Math.ceil((hi - start) / bw) + 1, cnt = new Array(nb).fill(0);
+    for (const v of vals) { const b = Math.floor((v - start) / bw + 1e-9); if (b >= 0 && b < nb) cnt[b]++; }
+    const frac = cnt.map(v => v / vals.length);
+    const ymax = Math.max(...frac, Math.min(pdf(mu, mu, sd) * bw, 1)) * 1.1 || 1;
+    const X = v => box.L + box.pw * (v - lo) / (hi - lo), Y = v => box.T + box.ph * (1 - v / ymax);
+    axes(x, box, niceTicks(lo, hi, 4), [], X, Y);
+    x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+    x.fillStyle = css("--accent"); x.globalAlpha = 0.75;
+    frac.forEach((v, i) => { if (!v) return; const x0 = X(start + i * bw), x1 = X(start + (i + 1) * bw);
+      x.fillRect(x0 + 0.5, Y(v), Math.max(1, x1 - x0 - 1), box.T + box.ph - Y(v)); });
+    x.globalAlpha = 1; x.strokeStyle = css("--fg"); x.lineWidth = 1.5; x.beginPath();
+    for (let i = 0; i <= 160; i++) { const v = lo + (hi - lo) * i / 160, y = pdf(v, mu, sd) * bw;
+      i ? x.lineTo(X(v), Y(y)) : x.moveTo(X(v), Y(y)); }
+    x.stroke(); x.restore();
+    x.strokeStyle = css("--muted"); x.beginPath(); x.moveTo(box.L, box.T + box.ph); x.lineTo(box.L + box.pw, box.T + box.ph); x.stroke();
+    const st = R.across[R.ts.indexOf(t)];
+    figs[ci].querySelector("figcaption").textContent =
+      "t = " + t + " · mean " + fmt(st.mean) + " · var " + wVar(st).toPrecision(3);
+  });
+}
+const sup = s => String(s).replace(/[-\d]/g, d => d === "-" ? "⁻" : "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+function drawVar() {
+  const c = $("varChart"), { x, w, h } = setup(c), box = mkBox(w, h);
+  const { ts, across, v, m, n } = R, L = Math.log10;
+  const pts = ts.map((t, i) => ({ t, y: wVar(across[i]) })).filter(p => p.y > 0);
+  const se = Math.sqrt(2 / (m - 1));
+  let lo = L(v / n) - 0.5, hi = L(v / ts[0]) + 0.5;
+  pts.forEach(p => { lo = Math.min(lo, L(p.y) - 0.1); hi = Math.max(hi, L(p.y) + 0.1); });
+  const X = t => box.L + box.pw * (L(t) - L(ts[0])) / (L(n) - L(ts[0])), Y = q => box.T + box.ph * (1 - (q - lo) / (hi - lo));
+  const xt = [1, 10, 100, 1000, 10000].filter(t => t >= ts[0] && t <= n);
+  const yt = []; for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) yt.push(e);
+  x.font = "11px ui-monospace, Menlo, monospace";
+  x.strokeStyle = css("--border"); x.fillStyle = css("--muted"); x.lineWidth = 1;
+  xt.forEach(t => { x.beginPath(); x.moveTo(X(t), box.T); x.lineTo(X(t), box.T + box.ph); x.stroke();
+    x.textAlign = "center"; x.fillText(t, X(t), box.T + box.ph + 14); });
+  yt.forEach(e => { x.beginPath(); x.moveTo(box.L, Y(e)); x.lineTo(box.L + box.pw, Y(e)); x.stroke();
+    x.textAlign = "right"; x.fillText("10" + sup(e), box.L - 6, Y(e) + 4); });
+  x.textAlign = "right"; x.fillText("t (log scale)", box.L + box.pw - 4, box.T + box.ph - 6);
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  // band: sigma²/t · (1 ± 2·sqrt(2/(m−1)))
+  x.fillStyle = css("--band"); x.beginPath();
+  ts.forEach((t, i) => { const py = Y(L(v / t * (1 + 2 * se))); i ? x.lineTo(X(t), py) : x.moveTo(X(t), py); });
+  for (let i = ts.length - 1; i >= 0; i--) x.lineTo(X(ts[i]), Y(L(v / ts[i] * Math.max(0.01, 1 - 2 * se))));
+  x.closePath(); x.fill();
+  x.strokeStyle = css("--line2"); x.lineWidth = 2; x.setLineDash([6, 4]); x.beginPath();
+  x.moveTo(X(ts[0]), Y(L(v / ts[0]))); x.lineTo(X(n), Y(L(v / n))); x.stroke(); x.setLineDash([]);
+  x.fillStyle = css("--accent");
+  pts.forEach(p => { x.beginPath(); x.arc(X(p.t), Y(L(p.y)), 3, 0, 7); x.fill(); });
+  x.restore();
+}
+function tables() {
+  const { cps, ts, across, mu, v, m, n, within, withinVals } = R;
+  let s = "<tr><th>t</th><th>mean of X̄ₜ (obs)</th><th>μ</th><th>Var(X̄ₜ) (obs)</th>" +
+          "<th>σ²/t</th><th>t · Var(X̄ₜ)</th><th>σ²</th></tr>";
+  const ratios = [];
+  cps.forEach(t => {
+    const st = across[ts.indexOf(t)], vv = wVar(st); ratios.push(t * vv / v);
+    s += "<tr><td>" + t + "</td><td>" + st.mean.toFixed(4) + "</td><td>" + mu.toFixed(4) +
+         "</td><td>" + vv.toPrecision(4) + "</td><td>" + (v / t).toPrecision(4) + "</td><td>" +
+         (t * vv).toFixed(4) + "</td><td>" + v.toFixed(4) + "</td></tr>";
+  });
+  $("momTable").innerHTML = s;
+
+  const sorted = Float64Array.from(withinVals).sort();
+  const q = f => sorted[Math.min(m - 1, Math.floor(f * m))];
+  $("withinTable").innerHTML =
+    "<tr><th></th><th>value</th></tr>" +
+    "<tr><td>σ² of the score distribution</td><td>" + v.toFixed(4) + "</td></tr>" +
+    "<tr><td>mean of the " + m + " values s²ⱼ (n = " + n + ")</td><td>" + within.mean.toFixed(4) + "</td></tr>" +
+    "<tr><td>5% – 95% range of s²ⱼ across hackers</td><td>" + q(0.05).toFixed(3) + " – " + q(0.95).toFixed(3) + "</td></tr>";
+
+  const se = Math.sqrt(2 / (m - 1));
+  const okVar = ratios.every(r => Math.abs(r - 1) < 3 * se);
+  const lastSt = across[ts.indexOf(n)];
+  const okMean = Math.abs(lastSt.mean - mu) < 3 * Math.sqrt(v / n / m);
+  $("verdict").innerHTML = "At t = " + n + " the hackers' average scores have mean <strong>" +
+    lastSt.mean.toFixed(4) + "</strong> (μ = " + mu.toFixed(4) + ") and variance <strong>" +
+    wVar(lastSt).toPrecision(4) + "</strong> (σ²/n = " + (v / n).toPrecision(4) + "). " +
+    "The ratio t · Var(X̄ₜ) / σ² ranges between " + Math.min(...ratios).toFixed(3) + " and " +
+    Math.max(...ratios).toFixed(3) + " over the checkpoints. " +
+    (okVar && okMean ? '<span class="ok">E[X̄ₜ] = μ and Var(X̄ₜ) = σ²/t are confirmed within sampling error.</span>'
+                     : '<span class="bad">At some checkpoint the ratio is more than 3 standard errors from 1. With a few checkpoints this happens now and then by chance: try another seed or a larger m.</span>');
+}
+
+/* ---------- run ---------- */
+function clamp(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
+function syncControls() {
+  const k = $("dist").value;
+  document.querySelectorAll(".pBeta").forEach(e => { e.hidden = k !== "beta"; });
+  document.querySelectorAll(".pP").forEach(e => { e.hidden = !(k === "binom" || k === "bern"); });
+}
+function run() {
+  syncControls();
+  const m = Math.round(clamp($("m").value, 10, 5000, 500));
+  const n = Math.round(clamp($("n").value, 10, 20000, 5000));
+  const al = clamp($("alpha").value, 0.2, 20, 2), be = clamp($("beta").value, 0.2, 20, 5);
+  const p = clamp($("p").value, 0.01, 0.99, 0.3);
+  const seed = Math.round(clamp($("seed").value, 1, 1e9, 2026));
+  const t0 = performance.now();
+  const rand = mulberry32(seed);
+  const D = makeDist($("dist").value, al, be, p, rand);
+  R = simulate(m, n, D, rand);
+  buildHistGrid(); drawAll(); tables();
+  $("runInfo").textContent = m + " hackers × " + n + " systems = " + (m * n).toLocaleString("en") +
+    " simulated attacks in " + Math.round(performance.now() - t0) + " ms. Score distribution " +
+    D.name + ": μ = " + R.mu.toFixed(3) + ", σ² = " + R.v.toFixed(3) + ".";
+}
+function drawAll() { if (!R) return; drawDist(); drawTraj(); drawHists(); drawVar(); }
+
+cancelDemo();
+$("params").addEventListener("submit", e => { e.preventDefault(); run(); });
+$("dist").addEventListener("change", run);
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+run();
+})();
+</script>
+</body>
+</html>
