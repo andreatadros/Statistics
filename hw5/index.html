@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 5 - Statistics</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --muted: #5a5a72;
+    --accent: #7a1f2b;
+    --card: #f5f3f0;
+    --border: #d9d4cc;
+    --code-bg: #14141f;
+    --code-fg: #e8e8f0;
+    --band: rgba(122, 31, 43, 0.14);
+    --band2: rgba(31, 95, 122, 0.20);
+    --line2: #1f5f7a;
+    --good: #2e9e5b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+      --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+      --code-bg: #0c0c14; --code-fg: #e8e8f0;
+      --band: rgba(224, 138, 150, 0.18); --band2: rgba(108, 195, 224, 0.22);
+      --line2: #6cc3e0; --good: #5fd08e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+    --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+    --code-bg: #0c0c14; --code-fg: #e8e8f0;
+    --band: rgba(224, 138, 150, 0.18); --band2: rgba(108, 195, 224, 0.22);
+    --line2: #6cc3e0; --good: #5fd08e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6; padding: 16px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { color: var(--accent); font-size: 1.7rem; margin-top: 0.4em; }
+  h2 { color: var(--accent); font-size: 1.3rem; margin-top: 1.8em;
+       border-bottom: 2px solid var(--border); padding-bottom: 0.2em; }
+  h3 { font-size: 1.05rem; margin-top: 1.4em; }
+  .muted { color: var(--muted); }
+  section { background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin: 18px 0; min-width: 0; }
+  pre { background: var(--code-bg); color: var(--code-fg); padding: 12px 14px;
+        border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg);
+             border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+             overflow-x: auto; white-space: nowrap; }
+  canvas { display: block; width: 100%; background: var(--bg);
+           border: 1px solid var(--border); border-radius: 8px; }
+  .traj { height: 280px; }
+  .small { height: 200px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 8px 0;
+          font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; }
+  th { background: var(--border); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 12px 16px; align-items: end; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;
+                    color: var(--muted); }
+  input, select { font: inherit; padding: 6px 8px; border-radius: 6px;
+                  border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+  input[type="range"] { padding: 0; accent-color: var(--accent); }
+  button { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 6px;
+           border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+           cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--line2); outline-offset: 2px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+           gap: 10px; }
+  .grid3 figure { margin: 0; min-width: 0; }
+  .grid3 figcaption { font-size: 0.8rem; color: var(--muted); text-align: center;
+                      font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem;
+            color: var(--muted); margin: 6px 0; }
+  .sw { display: inline-block; width: 16px; height: 4px; vertical-align: middle;
+        margin-right: 6px; border-radius: 2px; }
+  .swd { display: inline-block; width: 18px; height: 0; vertical-align: middle;
+         margin-right: 6px; border-top: 3px dashed; }
+  .readout { font-variant-numeric: tabular-nums; }
+  .ok { color: var(--good); font-weight: 600; }
+  .bad { color: var(--accent); font-weight: 600; }
+  [hidden] { display: none !important; }
+  a { color: var(--line2); }
+</style>
+</head>
+<body>
+<main>
+<h1>Homework 5 — From density to CDF, and Riemann vs Lebesgue integration</h1>
+<p class="muted">Statistics — first we build the cumulative distribution function of a normal
+random variable by integrating its density numerically, and use it to see how the two
+functions are related. Then we compute the same integrals in two different ways, slicing
+the area under a function vertically (Riemann) or horizontally (Lebesgue), and compare
+how the two methods behave on different functions. Everything is computed live in your
+browser.</p>
+<p class="muted">Previous homework: <a href="../hw4/">Homework 4 — the Welford recurrence and
+continuous penetration scores</a>.</p>
+
+<!-- ============================================================= -->
+<h2>The assignment</h2>
+<section>
+<p><strong>1.</strong> Given a normal density, find the CDF by numerical integration. This
+shows in practice the relationship between the density and the cumulative distribution
+function.</p>
+<p><strong>2.</strong> Given a choice of functions f₁, f₂, compute numerically both the
+Riemann and the Lebesgue integral. This shows in practice the difference between the two.</p>
+<p class="muted">On the blackboard, next to the assignment: the strip f(x) dx under the
+bell curve, and ∫ x dF → μ, σ, i.e. the moments of a distribution written as integrals
+with respect to its CDF. Both appear below.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 1 — The CDF of a normal density, by numerical integration</h2>
+<section>
+<h3>The method</h3>
+<p>The density of N(μ, σ²) and its CDF are</p>
+<p class="formula">f(x) = 1/(σ√(2π)) · exp(−(x − μ)² / (2σ²)) &nbsp;&nbsp;&nbsp;
+F(x) = Pr(X ≤ x) = ∫<sub>−∞..x</sub> f(t) dt</p>
+<p>F has no closed form, so we integrate. The integral starts at −∞, but we start at
+a = μ − 10σ, where the missing mass is Φ(−10) ≈ 7.6 · 10⁻²⁴, far below double precision.
+On the nodes xᵢ = a + i·h we accumulate the area strip by strip, either with rectangles or
+with trapezoids:</p>
+<p class="formula">rectangles: F(xᵢ₊₁) = F(xᵢ) + f(xᵢ) · h &nbsp;&nbsp;&nbsp;
+trapezoids: F(xᵢ₊₁) = F(xᵢ) + h · (f(xᵢ) + f(xᵢ₊₁)) / 2</p>
+<p>Each value of F is the previous one plus the area of one strip f(x)·dx: the CDF is the
+running total of the density. The result is compared with the exact CDF Φ((x − μ)/σ),
+computed from the error function to full double precision.</p>
+
+<form id="p1" class="controls" onsubmit="return false">
+  <label for="mu">μ — mean
+    <input id="mu" type="number" step="0.5" value="0"></label>
+  <label for="sigma">σ — standard deviation
+    <input id="sigma" type="number" min="0.1" max="100" step="0.1" value="1"></label>
+  <label for="hstep">step h (in units of σ)
+    <select id="hstep">
+      <option value="1">h = σ</option>
+      <option value="0.5" selected>h = 0.5 σ</option>
+      <option value="0.25">h = 0.25 σ</option>
+      <option value="0.1">h = 0.1 σ</option>
+      <option value="0.01">h = 0.01 σ</option>
+      <option value="0.001">h = 0.001 σ</option>
+    </select></label>
+  <label for="rule">rule
+    <select id="rule">
+      <option value="rect">rectangles (left point)</option>
+      <option value="trap">trapezoids</option>
+    </select></label>
+  <label for="x0">x — upper limit of the integral
+    <input id="x0" type="range" min="-4" max="4" step="0.01" value="0.8"></label>
+</form>
+<p class="readout" id="p1read"></p>
+
+<h3>The density, and the area that becomes F(x)</h3>
+<div class="legend">
+  <span><span class="sw" style="background:var(--fg)"></span>density f</span>
+  <span><span class="sw" style="background:var(--band);height:10px"></span>strips summed up to x = F(x)</span>
+  <span><span class="sw" style="background:var(--line2);height:7px;width:7px;border-radius:50%"></span>slope of the computed CDF, (F(xᵢ₊₁) − F(xᵢ₋₁)) / 2h</span>
+</div>
+<canvas id="densChart" class="traj" aria-label="Normal density with the area up to x shaded"></canvas>
+<p class="muted">The dots are computed from the CDF alone, by taking its slope, and they fall
+back onto the density: integrating f gives F, differentiating F gives back f.</p>
+
+<h3>The computed CDF</h3>
+<div class="legend">
+  <span><span class="sw" style="background:var(--accent)"></span>numerical F (values at the nodes)</span>
+  <span><span class="swd" style="border-color:var(--line2)"></span>exact Φ((x − μ)/σ)</span>
+</div>
+<canvas id="cdfChart" class="traj" aria-label="Numerical and exact CDF"></canvas>
+<p class="muted">Where the density is high (around μ) the CDF climbs steeply; in the tails,
+where the density is almost zero, the CDF is almost flat. The height F(x) of the red curve
+is the shaded area of the chart above.</p>
+
+<h3>Accuracy against the step h</h3>
+<p>Largest error max<sub>i</sub> |F(xᵢ) − Φ((xᵢ − μ)/σ)| over the whole grid, for both rules:</p>
+<div class="tablewrap"><table id="convTable"></table></div>
+<p class="muted">Dividing h by 10 divides the rectangle error by 10 (first order, O(h)) and
+the trapezoid error by 100 (second order, O(h²)). The predicted values come from
+Part 3.</p>
+
+<h3>Moments as integrals with respect to F: ∫ x dF → μ, σ</h3>
+<p>Once F is known on the grid, the increment F(xᵢ₊₁) − F(xᵢ) is the probability of the
+strip [xᵢ, xᵢ₊₁]. Weighting each strip by its midpoint x̃ᵢ gives the Stieltjes sums</p>
+<p class="formula">μ ≈ Σ x̃ᵢ · (F(xᵢ₊₁) − F(xᵢ)) &nbsp;&nbsp;&nbsp;
+σ² ≈ Σ (x̃ᵢ − μ̂)² · (F(xᵢ₊₁) − F(xᵢ))</p>
+<div class="tablewrap"><table id="momTable"></table></div>
+<p class="muted" id="momNote"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 2 — Riemann and Lebesgue integrals of f₁ and f₂</h2>
+<section>
+<h3>Two ways to slice the same area</h3>
+<p><strong>Riemann</strong> cuts the <em>domain</em> (the x-axis) into n strips of width
+Δx and asks, for each strip, “how high is f here?”:</p>
+<p class="formula">Rₙ = Σ<sub>i=1..n</sub> f(ξᵢ) · Δx &nbsp;&nbsp;&nbsp; (ξᵢ = midpoint of strip i)</p>
+<p><strong>Lebesgue</strong> cuts the <em>range</em> (the y-axis) into K levels of height
+Δy and asks, for each level, “on how much of the x-axis is f above this level?”. That
+amount is the measure m({x : f(x) &gt; y}), and the integral is the area under it
+(the “layer cake” formula, for f ≥ 0):</p>
+<p class="formula">∫ f dm = ∫<sub>0..∞</sub> m({x : f(x) &gt; y}) dy &nbsp;≈&nbsp;
+L<sub>K</sub> = Σ<sub>j=1..K</sub> m({f &gt; yⱼ}) · Δy &nbsp;&nbsp;&nbsp; (yⱼ = midpoint of level j)</p>
+<p>The set {f &gt; y} can be made of many separate pieces: Lebesgue does not care where
+they are, only how long they are in total. To measure them, the page samples f once on
+a fine “measuring tape” of M = 2²⁰ ≈ 10⁶ points and sorts the values. The measure of
+{f &gt; y} is then (number of samples above y) × (b − a)/M, found by binary search.</p>
+
+<form id="p2" class="controls" onsubmit="return false">
+  <label for="f1">f₁
+    <select id="f1"></select></label>
+  <label for="f2">f₂
+    <select id="f2"></select></label>
+  <label for="nvis">n — Riemann strips (pictures)
+    <input id="nvis" type="number" min="1" max="400" step="1" value="10"></label>
+  <label for="kvis">K — Lebesgue levels (pictures)
+    <input id="kvis" type="number" min="1" max="200" step="1" value="10"></label>
+</form>
+
+<h3 id="h_f1">f₁</h3>
+<div class="grid3">
+  <figure><canvas id="r1" class="small" aria-label="Riemann sum of f1"></canvas><figcaption id="r1c"></figcaption></figure>
+  <figure><canvas id="l1" class="small" aria-label="Lebesgue sum of f1"></canvas><figcaption id="l1c"></figcaption></figure>
+  <figure><canvas id="m1" class="small" aria-label="Measure of the level sets of f1"></canvas><figcaption id="m1c"></figcaption></figure>
+</div>
+<h3 id="h_f2">f₂</h3>
+<div class="grid3">
+  <figure><canvas id="r2" class="small" aria-label="Riemann sum of f2"></canvas><figcaption id="r2c"></figcaption></figure>
+  <figure><canvas id="l2" class="small" aria-label="Lebesgue sum of f2"></canvas><figcaption id="l2c"></figcaption></figure>
+  <figure><canvas id="m2" class="small" aria-label="Measure of the level sets of f2"></canvas><figcaption id="m2c"></figcaption></figure>
+</div>
+<p class="muted">Left: vertical strips (Riemann). Centre: horizontal slices (Lebesgue), each
+level shaded only where f is above it. Right: the function y ↦ m({f &gt; y}) that
+Lebesgue actually integrates; the bars are the K slices laid side by side, and their total
+area is L<sub>K</sub>.</p>
+
+<h3>Convergence: error against the number of subdivisions (log–log scale)</h3>
+<div class="legend">
+  <span><span class="sw" style="background:var(--accent)"></span>f₁ Riemann (n strips)</span>
+  <span><span class="sw" style="background:var(--line2)"></span>f₁ Lebesgue (K levels)</span>
+  <span><span class="swd" style="border-color:var(--accent)"></span>f₂ Riemann</span>
+  <span><span class="swd" style="border-color:var(--line2)"></span>f₂ Lebesgue</span>
+</div>
+<canvas id="convChart" class="traj" aria-label="Error of the Riemann and Lebesgue sums"></canvas>
+<p class="muted">Errors are measured against the exact value of each integral. An error of
+exactly zero is drawn at 10⁻¹⁶. The Lebesgue error cannot go below the accuracy of the
+measuring tape (shown in the table).</p>
+<div class="tablewrap"><table id="cmpTable"></table></div>
+<p id="cmpVerdict"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 3 — Theory</h2>
+<section>
+<h3>Density and CDF</h3>
+<p>For a continuous random variable the two functions carry the same information:</p>
+<p class="formula">F(x) = ∫<sub>−∞..x</sub> f(t) dt &nbsp;&nbsp;⇔&nbsp;&nbsp; f(x) = F′(x)
+&nbsp;&nbsp;&nbsp; Pr(a &lt; X ≤ b) = F(b) − F(a) = ∫<sub>a..b</sub> f(x) dx</p>
+<p>The density is not a probability (it can exceed 1 when σ is small): only areas under it
+are probabilities, and F(x) is the area to the left of x. F is non-decreasing, goes from 0
+to 1, and it is steepest exactly where f is largest.</p>
+
+<h3>Error of the two rules in Part 1</h3>
+<p>On one strip, the left rectangle misses the area of a triangle, about h²·f′/2, and the
+trapezoid misses about h³·f″/12. Summing over the strips up to x gives</p>
+<p class="formula">rectangles: F<sub>h</sub>(x) − F(x) ≈ −(h/2)·f(x) &nbsp;&nbsp;&nbsp;
+trapezoids: F<sub>h</sub>(x) − F(x) ≈ +(h²/12)·f′(x)</p>
+<p>So the largest error is about h·max f / 2 = h / (2σ√(2π)) for rectangles and
+h²·max|f′| / 12 = h² / (12σ²√(2πe)) for trapezoids. These are the predicted values in the
+table of Part 1.</p>
+<p>The same strip picture explains the moments table. With rectangles, the probability
+f(xᵢ)·h of the node xᵢ is assigned to the strip on its right, so the whole distribution is
+moved by h/2 and the computed mean is μ + h/2, while the variance stays σ². With trapezoids,
+half of it goes to each side, so the mean is exact but the mass is spread by ±h/2 and the
+variance grows by (h/2)² = h²/4. Both biases vanish as h → 0.</p>
+
+<h3>Riemann and Lebesgue</h3>
+<p><strong>Riemann</strong> partitions the domain. The integral exists when the upper sums
+(largest value on each strip) and the lower sums (smallest value) converge to the same
+number. That happens exactly when f is bounded and its points of discontinuity have
+measure zero.</p>
+<p><strong>Lebesgue</strong> partitions the range. For a simple function
+s = Σ cⱼ·1<sub>Aⱼ</sub> the integral is Σ cⱼ·m(Aⱼ), value times measure of the set where it
+is taken; for f ≥ 0 the integral is the supremum over the simple functions below f, which
+is the layer-cake formula used above. Every Riemann-integrable function is
+Lebesgue-integrable with the same value, so on the functions of Part 2 the two methods
+must agree in the limit. What changes is how they get there:</p>
+<ul>
+<li>The Riemann error depends on how irregular f is <em>in x</em>: fast oscillations or
+steep parts need many strips.</li>
+<li>The Lebesgue error depends on how the measure m({f &gt; y}) changes <em>in y</em>.
+Where it is smooth, few levels suffice. The sum is always between the lower and upper
+Lebesgue sums, which differ by at most Δy·(b − a), no matter how much f oscillates.</li>
+<li>For a function with finitely many values (the staircase), m({f &gt; y}) is a step
+function, and the Lebesgue sum is exact as soon as no level falls exactly on a value.</li>
+<li>x² and √x on [0, 1] are inverse functions: the graph of one is the graph of the other
+reflected across the line y = x. The vertical strips of one are the horizontal slices of
+the other, so the Riemann error of x² equals the Lebesgue error of √x, and vice versa.
+The comparison table shows the two errors are equal until the tape accuracy is
+reached.</li>
+</ul>
+
+<h3>Where only Lebesgue works</h3>
+<p>The Dirichlet function, 1 on the rationals of [0, 1] and 0 elsewhere, has upper sums
+equal to 1 and lower sums equal to 0 on every partition, because every strip contains both
+rationals and irrationals: it is not Riemann integrable. For Lebesgue it is a simple
+function: the rationals are countable, so m(ℚ ∩ [0, 1]) = 0 and the integral is
+1·0 + 0·1 = 0. It cannot be shown on a computer: every floating-point number is rational,
+so a program would only ever see the value 1.</p>
+
+<h3>The link with probability</h3>
+<p>Probability theory is built on the Lebesgue integral. The expected value is
+E[X] = ∫ x dF(x), a Lebesgue–Stieltjes integral with respect to the CDF. It covers
+continuous, discrete and mixed distributions with one formula: dF = f(x) dx when there is
+a density, and dF is a jump of size Pr(X = x) at an atom. For X ≥ 0 the layer-cake formula
+becomes</p>
+<p class="formula">E[X] = ∫<sub>0..∞</sub> Pr(X &gt; y) dy = ∫<sub>0..∞</sub> (1 − F(y)) dy</p>
+<p>which is the probabilistic form of Lebesgue's horizontal slicing. The right-hand charts
+of Part 2 are exactly this: if U is uniform on [a, b], then m({f &gt; y}) = (b − a) ·
+Pr(f(U) &gt; y). Sorting the tape gives the quantile function of f(U), and the Lebesgue
+integral equals (b − a) · E[f(U)].</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Core of the computation</h2>
+<section>
+<pre><code>// Part 1: CDF of N(mu, sigma²) by accumulating strips f(x) dx
+const a = mu - 10 * sigma, N = Math.round(20 * sigma / h);
+F[0] = 0;
+for (let i = 1; i &lt;= N; i++) {
+  const x0 = a + (i - 1) * h, x1 = a + i * h;
+  F[i] = F[i - 1] + (rule === "rect" ? f(x0) * h               // rectangle
+                                     : h * (f(x0) + f(x1)) / 2); // trapezoid
+}
+
+// Part 2: Riemann — slice the x-axis
+function riemann(f, a, b, n) {
+  const dx = (b - a) / n; let s = 0;
+  for (let i = 0; i &lt; n; i++) s += f(a + (i + 0.5) * dx);
+  return s * dx;
+}
+
+// Part 2: Lebesgue — slice the y-axis
+// tape = f sampled at M midpoints of [a, b], sorted increasingly
+const measureAbove = y =&gt; countAbove(tape, y) * (b - a) / M;   // m({f &gt; y}), binary search
+function lebesgue(top, K) {                                       // 0 ≤ f ≤ top
+  const dy = top / K; let s = 0;
+  for (let j = 0; j &lt; K; j++) s += measureAbove((j + 0.5) * dy);
+  return s * dy;
+}</code></pre>
+<p class="muted">The exact CDF uses erf (power series for |x| &lt; 2.5, continued fraction
+for erfc beyond); the exact integral of sin²(1/x) uses the sine integral Si(2) (power
+series). Both are accurate to about 10⁻¹⁵.</p>
+</section>
+
+<h2>Conclusions</h2>
+<section>
+<ul>
+<li>Integrating the normal density strip by strip gives its CDF: each value of F is the
+area accumulated so far. Taking the slope of the computed CDF gives the density back, so
+the two are two views of the same distribution.</li>
+<li>Rectangles converge like h and trapezoids like h², as predicted. From the computed CDF,
+the sums ∫ x dF and ∫ (x − μ)² dF recover μ and σ², with biases h/2 and h²/4 that vanish
+as h → 0.</li>
+<li>Riemann and Lebesgue give the same value on these functions, but they get there
+differently: Riemann slices the x-axis and suffers when f oscillates or is steep in x;
+Lebesgue slices the y-axis and only depends on how much of the domain lies above each
+level.</li>
+<li>Probability uses Lebesgue's point of view: expectations are integrals with respect to
+the distribution, E[X] = ∫ x dF, and for X ≥ 0 they are areas of horizontal slices,
+∫ Pr(X &gt; y) dy.</li>
+</ul>
+</section>
+</main>
+
+<script>
+(function () {
+"use strict";
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ---------- special functions ---------- */
+const SQPI = Math.sqrt(Math.PI);
+function erfSeries(x) {                 // 2/√π Σ (−1)ⁿ x²ⁿ⁺¹ / (n! (2n+1)), for |x| < 2.5
+  let t = x, s = x;
+  for (let n = 1; n < 200; n++) {
+    t *= -x * x / n; const d = t / (2 * n + 1); s += d;
+    if (Math.abs(d) < 1e-17 * Math.abs(s)) break;
+  }
+  return 2 / SQPI * s;
+}
+function erfc(x) {                      // continued fraction for x ≥ 2.5
+  if (x < 0) return 2 - erfc(-x);
+  if (x < 2.5) return 1 - erfSeries(x);
+  let f = x; for (let k = 300; k >= 1; k--) f = x + (k / 2) / f;
+  return Math.exp(-x * x) / SQPI / f;
+}
+const Phi = z => z < 0 ? 0.5 * erfc(-z / Math.SQRT2) : 1 - 0.5 * erfc(z / Math.SQRT2);
+const npdf = (x, mu, s) => Math.exp(-0.5 * ((x - mu) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
+function Si(x) {                        // sine integral, power series
+  let s = 0, t = x;
+  for (let n = 0; n < 60; n++) { s += t / (2 * n + 1); t *= -x * x / ((2 * n + 2) * (2 * n + 3)); }
+  return s;
+}
+
+/* ---------- drawing helpers (as in the previous homework) ---------- */
+function setup(c) {
+  const r = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.round(w * r); c.height = Math.round(h * r);
+  const x = c.getContext("2d"); x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  return { x, w, h };
+}
+function niceTicks(lo, hi, count) {
+  const span = hi - lo; if (span <= 0) return [lo];
+  const raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const fmt = v => {
+  const a = Math.abs(v);
+  if (a === 0) return "0";
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  if (a >= 1) return v.toFixed(2).replace(/\.?0+$/, "");
+  return v.toFixed(3).replace(/\.?0+$/, "");
+};
+function axes(x, box, xs, ys, X, Y, xlab, xfmt, yfmt) {
+  x.font = "11px ui-monospace, Menlo, monospace";
+  x.strokeStyle = css("--border"); x.fillStyle = css("--muted"); x.lineWidth = 1;
+  xs.forEach(v => { x.beginPath(); x.moveTo(X(v), box.T); x.lineTo(X(v), box.T + box.ph); x.stroke();
+    x.textAlign = "center"; x.fillText((xfmt || fmt)(v), X(v), box.T + box.ph + 14); });
+  ys.forEach(v => { x.beginPath(); x.moveTo(box.L, Y(v)); x.lineTo(box.L + box.pw, Y(v)); x.stroke();
+    x.textAlign = "right"; x.fillText((yfmt || fmt)(v), box.L - 6, Y(v) + 4); });
+  if (xlab) { x.textAlign = "right"; x.fillText(xlab, box.L + box.pw - 4, box.T + box.ph - 6); }
+}
+const mkBox = (w, h, L) => { const b = { L: L || 56, R: 12, T: 10, B: 24 };
+  b.pw = w - b.L - b.R; b.ph = h - b.T - b.B; return b; };
+const sup = s => String(s).replace(/[-\d]/g, d => d === "-" ? "⁻" : "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+const sci = v => {
+  if (v === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(v))), m = v / Math.pow(10, e);
+  return m.toFixed(2) + "·10" + sup(e);
+};
+function clamp(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
+
+/* =================================================================
+   Part 1 — CDF by numerical integration
+   ================================================================= */
+function cdfGrid(mu, s, hs, rule) {
+  const h = hs * s, a = mu - 10 * s, N = Math.round(20 / hs);
+  const xs = new Float64Array(N + 1), fs = new Float64Array(N + 1), F = new Float64Array(N + 1);
+  for (let i = 0; i <= N; i++) { xs[i] = a + i * h; fs[i] = npdf(xs[i], mu, s); }
+  for (let i = 1; i <= N; i++)
+    F[i] = F[i - 1] + (rule === "rect" ? fs[i - 1] * h : h * (fs[i - 1] + fs[i]) / 2);
+  let maxErr = 0;
+  for (let i = 0; i <= N; i++) maxErr = Math.max(maxErr, Math.abs(F[i] - Phi((xs[i] - mu) / s)));
+  return { mu, s, h, hs, a, N, xs, fs, F, rule, maxErr };
+}
+function interpF(G, x) {               // F(x) = F(xᵢ) + the same rule applied to the last partial strip
+  const i = Math.floor((x - G.a) / G.h + 1e-9);
+  if (i < 0) return 0; if (i >= G.N) return G.F[G.N];
+  const d = x - G.xs[i];
+  return G.F[i] + (G.rule === "rect" ? G.fs[i] * d : d * (G.fs[i] + npdf(x, G.mu, G.s)) / 2);
+}
+function moments(G) {
+  let m1 = 0, m2 = 0;
+  for (let i = 0; i < G.N; i++) m1 += 0.5 * (G.xs[i] + G.xs[i + 1]) * (G.F[i + 1] - G.F[i]);
+  for (let i = 0; i < G.N; i++) m2 += (0.5 * (G.xs[i] + G.xs[i + 1]) - m1) ** 2 * (G.F[i + 1] - G.F[i]);
+  return { m1, m2 };
+}
+
+let G = null;
+function readP1() {
+  const mu = clamp($("mu").value, -1e6, 1e6, 0);
+  const s = clamp($("sigma").value, 0.01, 1e6, 1);
+  return { mu, s, hs: Number($("hstep").value), rule: $("rule").value };
+}
+function runP1() {
+  const p = readP1();
+  G = cdfGrid(p.mu, p.s, p.hs, p.rule);
+  tablesP1();
+  drawP1();
+}
+function x0val() { return G.mu + G.s * Number($("x0").value); }
+
+function drawDens() {
+  const c = $("densChart"), { x, w, h } = setup(c), box = mkBox(w, h, 52);
+  const { mu, s, h: hh, N, xs, fs, F, rule } = G, lo = mu - 4 * s, hi = mu + 4 * s, x0 = x0val();
+  const ymax = 1.12 / (s * Math.sqrt(2 * Math.PI));
+  const X = v => box.L + box.pw * (v - lo) / (hi - lo), Y = v => box.T + box.ph * (1 - v / ymax);
+  axes(x, box, niceTicks(lo, hi, 8), niceTicks(0, ymax, 4), X, Y, "x");
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  // strips up to x0
+  const visible = (hi - lo) / hh <= 160;
+  x.fillStyle = css("--band"); x.strokeStyle = css("--accent"); x.lineWidth = 1;
+  for (let i = 0; i < N; i++) {
+    const xa = xs[i]; if (xa >= x0) break;
+    const xb = Math.min(xs[i + 1], x0);
+    if (xs[i + 1] < lo) continue;
+    x.beginPath();
+    if (rule === "rect") {
+      x.rect(X(xa), Y(fs[i]), X(xb) - X(xa), Y(0) - Y(fs[i]));
+    } else {
+      const fb = xb === xs[i + 1] ? fs[i + 1] : fs[i] + (fs[i + 1] - fs[i]) * (xb - xa) / hh;
+      x.moveTo(X(xa), Y(0)); x.lineTo(X(xa), Y(fs[i])); x.lineTo(X(xb), Y(fb)); x.lineTo(X(xb), Y(0)); x.closePath();
+    }
+    x.fill(); if (visible) { x.globalAlpha = 0.5; x.stroke(); x.globalAlpha = 1; }
+  }
+  // density curve
+  x.strokeStyle = css("--fg"); x.lineWidth = 2; x.beginPath();
+  for (let k = 0; k <= 400; k++) { const v = lo + (hi - lo) * k / 400; k ? x.lineTo(X(v), Y(npdf(v, mu, s))) : x.moveTo(X(v), Y(npdf(v, mu, s))); }
+  x.stroke();
+  // slope of the computed CDF
+  x.fillStyle = css("--line2");
+  const iLo = Math.max(1, Math.ceil((lo - G.a) / hh)), iHi = Math.min(N - 1, Math.floor((hi - G.a) / hh));
+  const stride = Math.max(1, Math.ceil((iHi - iLo + 1) / 50));
+  for (let i = iLo; i <= iHi; i += stride) {
+    const d = (F[i + 1] - F[i - 1]) / (2 * hh);
+    x.beginPath(); x.arc(X(xs[i]), Y(d), 3.2, 0, 7); x.fill();
+  }
+  // x0 marker
+  x.strokeStyle = css("--accent"); x.lineWidth = 2; x.setLineDash([6, 4]);
+  x.beginPath(); x.moveTo(X(x0), box.T); x.lineTo(X(x0), box.T + box.ph); x.stroke(); x.setLineDash([]);
+  x.restore();
+  x.fillStyle = css("--accent"); x.textAlign = "left"; x.font = "12px ui-monospace, Menlo, monospace";
+  const lx = Math.min(X(x0) + 6, box.L + box.pw - 120);
+  x.fillText("area = F(" + fmt(x0) + ") ≈ " + interpF(G, x0).toFixed(4), lx, box.T + 14);
+}
+function drawCdf() {
+  const c = $("cdfChart"), { x, w, h } = setup(c), box = mkBox(w, h, 52);
+  const { mu, s, xs, F, N } = G, lo = mu - 4 * s, hi = mu + 4 * s, x0 = x0val();
+  const X = v => box.L + box.pw * (v - lo) / (hi - lo), Y = v => box.T + box.ph * (1 - (v + 0.04) / 1.1);
+  axes(x, box, niceTicks(lo, hi, 8), [0, 0.25, 0.5, 0.75, 1], X, Y, "x");
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  // numerical (polyline through nodes, plus dots when coarse)
+  x.strokeStyle = css("--accent"); x.lineWidth = 2.5; x.beginPath(); let first = true;
+  for (let i = 0; i <= N; i++) {
+    if (xs[i] < lo - G.h || xs[i] > hi + G.h) continue;
+    first ? x.moveTo(X(xs[i]), Y(F[i])) : x.lineTo(X(xs[i]), Y(F[i])); first = false;
+  }
+  x.stroke();
+  if ((hi - lo) / G.h <= 80) {
+    x.fillStyle = css("--accent");
+    for (let i = 0; i <= N; i++) if (xs[i] >= lo && xs[i] <= hi) { x.beginPath(); x.arc(X(xs[i]), Y(F[i]), 3, 0, 7); x.fill(); }
+  }
+  // exact
+  x.strokeStyle = css("--line2"); x.lineWidth = 2; x.setLineDash([6, 4]); x.beginPath();
+  for (let k = 0; k <= 400; k++) { const v = lo + (hi - lo) * k / 400, y = Phi((v - mu) / s); k ? x.lineTo(X(v), Y(y)) : x.moveTo(X(v), Y(y)); }
+  x.stroke(); x.setLineDash([]);
+  // x0 marker
+  const Fx = interpF(G, x0);
+  x.strokeStyle = css("--muted"); x.lineWidth = 1; x.setLineDash([3, 3]);
+  x.beginPath(); x.moveTo(X(x0), Y(-0.04)); x.lineTo(X(x0), Y(Fx)); x.lineTo(box.L, Y(Fx)); x.stroke(); x.setLineDash([]);
+  x.fillStyle = css("--accent"); x.beginPath(); x.arc(X(x0), Y(Fx), 5, 0, 7); x.fill();
+  x.restore();
+}
+function readout() {
+  const x0 = x0val(), Fn = interpF(G, x0), Fe = Phi((x0 - G.mu) / G.s);
+  $("p1read").innerHTML = "At x = <strong>" + x0.toFixed(3) + "</strong> (μ " +
+    (x0 >= G.mu ? "+ " : "− ") + Math.abs((x0 - G.mu) / G.s).toFixed(2) + "σ): numerical F(x) = <strong>" +
+    Fn.toFixed(6) + "</strong>, exact Φ = " + Fe.toFixed(6) + ", error " + sci(Fn - Fe) +
+    ". Grid: " + (G.N + 1).toLocaleString("en") + " nodes from μ − 10σ to μ + 10σ, h = " + fmt(G.h) + ".";
+}
+function drawP1() { if (!G) return; drawDens(); drawCdf(); readout(); }
+
+function tablesP1() {
+  const { mu, s } = G, hsList = [1, 0.5, 0.25, 0.1, 0.01, 0.001];
+  const fmax = 1 / (s * Math.sqrt(2 * Math.PI)), dmax = 1 / (s * s * Math.sqrt(2 * Math.PI * Math.E));
+  let t = "<tr><th>h</th><th>rectangles: max error</th><th>predicted h·max f / 2</th>" +
+          "<th>trapezoids: max error</th><th>predicted h²·max|f′| / 12</th></tr>";
+  hsList.forEach(hs => {
+    const h = hs * s, er = cdfGrid(mu, s, hs, "rect").maxErr, et = cdfGrid(mu, s, hs, "trap").maxErr;
+    t += "<tr" + (hs === G.hs ? " style='font-weight:600'" : "") + "><td>" + fmt(hs) + " σ</td><td>" + sci(er) +
+         "</td><td>" + sci(h * fmax / 2) + "</td><td>" + sci(et) + "</td><td>" + sci(h * h * dmax / 12) + "</td></tr>";
+  });
+  $("convTable").innerHTML = t;
+
+  const M = moments(G);
+  const P = k => interpF(G, mu + k * s) - interpF(G, mu - k * s), Pe = k => Phi(k) - Phi(-k);
+  let m = "<tr><th>quantity</th><th>from the numerical F</th><th>exact</th><th>difference</th></tr>";
+  const row = (name, a, b) => "<tr><td>" + name + "</td><td>" + a.toFixed(6) + "</td><td>" + b.toFixed(6) +
+    "</td><td>" + sci(a - b) + "</td></tr>";
+  m += row("total mass F(μ + 10σ)", G.F[G.N], 1);
+  m += row("mean ∫ x dF", M.m1, mu);
+  m += row("variance ∫ (x − μ̂)² dF", M.m2, s * s);
+  [1, 2, 3].forEach(k => { m += row("Pr(|X − μ| &lt; " + k + "σ) = F(μ+" + k + "σ) − F(μ−" + k + "σ)", P(k), Pe(k)); });
+  $("momTable").innerHTML = m;
+  $("momNote").textContent = G.rule === "rect"
+    ? "With rectangles the mean is shifted by h/2 = " + fmt(G.h / 2) + " and the variance is right: see Part 3."
+    : "With trapezoids the mean is right and the variance is larger by h²/4 = " + (G.h * G.h / 4).toPrecision(3) + ": see Part 3.";
+}
+
+/* =================================================================
+   Part 2 — Riemann vs Lebesgue
+   ================================================================= */
+const FUNCS = {
+  sq:    { name: "f(x) = x² on [0, 1]", short: "x²", f: x => x * x, a: 0, b: 1, top: 1, I: 1 / 3, Itxt: "1/3" },
+  sqrt:  { name: "f(x) = √x on [0, 1]", short: "√x", f: x => Math.sqrt(x), a: 0, b: 1, top: 1, I: 2 / 3, Itxt: "2/3" },
+  stair: { name: "staircase f(x) = ⌊3x⌋ / 2 on [0, 1]", short: "⌊3x⌋/2", f: x => Math.floor(3 * x) / 2, a: 0, b: 1, top: 1, I: 0.5, Itxt: "1/2" },
+  osc:   { name: "f(x) = sin²(1/x) on (0, 1]", short: "sin²(1/x)", f: x => Math.sin(1 / x) ** 2, a: 0, b: 1, top: 1,
+           I: Math.sin(1) ** 2 + Math.PI / 2 - Si(2), Itxt: "sin²1 + π/2 − Si(2)" },
+  norm:  { name: "normal density φ(x) on [−3, 3]", short: "φ(x)", f: x => npdf(x, 0, 1), a: -3, b: 3, top: 1 / Math.sqrt(2 * Math.PI),
+           I: Phi(3) - Phi(-3), Itxt: "Φ(3) − Φ(−3)" },
+};
+const MTAPE = 1 << 20;
+const tapes = {};
+function tape(key) {                    // f sampled at M midpoints, sorted
+  if (tapes[key]) return tapes[key];
+  const F = FUNCS[key], dx = (F.b - F.a) / MTAPE, v = new Float64Array(MTAPE);
+  for (let i = 0; i < MTAPE; i++) v[i] = F.f(F.a + (i + 0.5) * dx);
+  let raw = 0; for (let i = 0; i < MTAPE; i++) raw += v[i];
+  v.sort();
+  return (tapes[key] = { v, dx, rawErr: Math.abs(raw * dx - F.I) });
+}
+function countAbove(v, y) {
+  let lo = 0, hi = v.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (v[mid] > y) hi = mid; else lo = mid + 1; }
+  return v.length - lo;
+}
+const measureAbove = (T, y) => countAbove(T.v, y) * T.dx;
+function riemann(F, n) {
+  const dx = (F.b - F.a) / n; let s = 0;
+  for (let i = 0; i < n; i++) s += F.f(F.a + (i + 0.5) * dx);
+  return s * dx;
+}
+function lebesgue(F, T, K) {
+  const dy = F.top / K; let s = 0;
+  for (let j = 0; j < K; j++) s += measureAbove(T, (j + 0.5) * dy);
+  return s * dy;
+}
+
+function drawRiemann(cv, F, n) {
+  const { x, w, h } = setup(cv), box = mkBox(w, h, 40);
+  const ymax = F.top * 1.08;
+  const X = v => box.L + box.pw * (v - F.a) / (F.b - F.a), Y = v => box.T + box.ph * (1 - v / ymax);
+  axes(x, box, niceTicks(F.a, F.b, 4), niceTicks(0, ymax, 3), X, Y);
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  const dx = (F.b - F.a) / n;
+  for (let i = 0; i < n; i++) {
+    const xa = F.a + i * dx, y = F.f(xa + dx / 2);
+    x.fillStyle = css(i % 2 ? "--band" : "--band"); x.globalAlpha = i % 2 ? 1 : 0.65;
+    x.fillRect(X(xa), Y(y), X(xa + dx) - X(xa), Y(0) - Y(y));
+    if (n <= 80) { x.globalAlpha = 0.7; x.strokeStyle = css("--accent"); x.lineWidth = 1;
+      x.strokeRect(X(xa), Y(y), X(xa + dx) - X(xa), Y(0) - Y(y)); }
+  }
+  x.globalAlpha = 1;
+  curve(x, F, X, Y, box);
+  x.restore();
+}
+function curve(x, F, X, Y, box) {
+  x.strokeStyle = css("--fg"); x.lineWidth = 1.5; x.beginPath();
+  const S = Math.max(400, Math.round(box.pw * 3));
+  for (let k = 0; k <= S; k++) {
+    const v = F.a + (F.b - F.a) * (k + 0.5) / (S + 1), y = F.f(v);
+    k ? x.lineTo(X(v), Y(y)) : x.moveTo(X(v), Y(y));
+  }
+  x.stroke();
+}
+function drawLebesgue(cv, F, K) {
+  const { x, w, h } = setup(cv), box = mkBox(w, h, 40);
+  const ymax = F.top * 1.08;
+  const X = v => box.L + box.pw * (v - F.a) / (F.b - F.a), Y = v => box.T + box.ph * (1 - v / ymax);
+  axes(x, box, niceTicks(F.a, F.b, 4), niceTicks(0, ymax, 3), X, Y);
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  const S = Math.max(600, Math.round(box.pw * 2)), dxs = (F.b - F.a) / S;
+  const vals = new Float64Array(S); for (let k = 0; k < S; k++) vals[k] = F.f(F.a + (k + 0.5) * dxs);
+  const dy = F.top / K;
+  for (let j = 0; j < K; j++) {
+    const yc = (j + 0.5) * dy;
+    x.fillStyle = css("--band2"); x.globalAlpha = j % 2 ? 1 : 0.6;
+    let start = -1;
+    for (let k = 0; k <= S; k++) {
+      const above = k < S && vals[k] > yc;
+      if (above && start < 0) start = k;
+      if (!above && start >= 0) {
+        const xa = F.a + start * dxs, xb = F.a + k * dxs;
+        x.fillRect(X(xa), Y((j + 1) * dy), Math.max(0.6, X(xb) - X(xa)), Y(j * dy) - Y((j + 1) * dy));
+        start = -1;
+      }
+    }
+  }
+  x.globalAlpha = 1;
+  if (K <= 60) {
+    x.strokeStyle = css("--line2"); x.globalAlpha = 0.5; x.lineWidth = 1;
+    for (let j = 1; j < K; j++) { x.beginPath(); x.moveTo(box.L, Y(j * dy)); x.lineTo(box.L + box.pw, Y(j * dy)); x.stroke(); }
+    x.globalAlpha = 1;
+  }
+  curve(x, F, X, Y, box);
+  x.restore();
+}
+function drawMeasure(cv, F, T, K) {
+  const { x, w, h } = setup(cv), box = mkBox(w, h, 40);
+  const L = F.b - F.a, ymax = L * 1.08, xmax = F.top;
+  const X = v => box.L + box.pw * v / xmax, Y = v => box.T + box.ph * (1 - v / ymax);
+  axes(x, box, niceTicks(0, xmax, 4), niceTicks(0, ymax, 3), X, Y, "level y");
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  const dy = F.top / K;
+  for (let j = 0; j < K; j++) {
+    const mm = measureAbove(T, (j + 0.5) * dy);
+    x.fillStyle = css("--band2"); x.globalAlpha = j % 2 ? 1 : 0.6;
+    x.fillRect(X(j * dy), Y(mm), X((j + 1) * dy) - X(j * dy), Y(0) - Y(mm));
+  }
+  x.globalAlpha = 1;
+  x.strokeStyle = css("--line2"); x.lineWidth = 2; x.beginPath();
+  const S = 500;
+  for (let k = 0; k <= S; k++) { const y = xmax * k / S, mm = measureAbove(T, y);
+    k ? x.lineTo(X(y), Y(mm)) : x.moveTo(X(y), Y(mm)); }
+  x.stroke();
+  x.restore();
+  x.fillStyle = css("--muted"); x.textAlign = "left"; x.font = "11px ui-monospace, Menlo, monospace";
+  x.fillText("m({f > y})", box.L + 6, box.T + 12);
+}
+
+let P2 = null;
+function runP2() {
+  const n = Math.round(clamp($("nvis").value, 1, 400, 10)), K = Math.round(clamp($("kvis").value, 1, 200, 10));
+  const keys = [$("f1").value, $("f2").value];
+  const steps = []; for (let k = 1; k <= 14; k++) steps.push(1 << k);
+  const res = keys.map(key => {
+    const F = FUNCS[key], T = tape(key);
+    return { key, F, T,
+      Rerr: steps.map(s => Math.abs(riemann(F, s) - F.I)),
+      Lerr: steps.map(s => Math.abs(lebesgue(F, T, s) - F.I)) };
+  });
+  P2 = { n, K, res, steps };
+  drawP2(); tablesP2();
+}
+function drawP2() {
+  if (!P2) return;
+  const { n, K, res } = P2;
+  res.forEach((r, i) => {
+    const id = i + 1, F = r.F, Rn = riemann(F, n), LK = lebesgue(F, r.T, K);
+    $("h_f" + id).textContent = "f" + "₁₂"[i] + ": " + F.name + " — exact integral " + F.Itxt + " = " + F.I.toFixed(6);
+    drawRiemann($("r" + id), F, n);
+    drawLebesgue($("l" + id), F, K);
+    drawMeasure($("m" + id), F, r.T, K);
+    $("r" + id + "c").textContent = "Riemann, n = " + n + ": R = " + Rn.toFixed(6) + " (error " + sci(Math.abs(Rn - F.I)) + ")";
+    $("l" + id + "c").textContent = "Lebesgue, K = " + K + ": L = " + LK.toFixed(6) + " (error " + sci(Math.abs(LK - F.I)) + ")";
+    $("m" + id + "c").textContent = "area under m({f > y}) = L";
+  });
+  drawConv();
+}
+function drawConv() {
+  const c = $("convChart"), { x, w, h } = setup(c), box = mkBox(w, h, 52);
+  const { steps, res } = P2, L10 = Math.log10, FLOOR = 1e-16;
+  let lo = 0, hi = -16;
+  res.forEach(r => [r.Rerr, r.Lerr].forEach(a => a.forEach(e => { const q = L10(Math.max(e, FLOOR)); lo = Math.min(lo, q); hi = Math.max(hi, q); })));
+  lo = Math.floor(lo) - 0.2; hi = Math.ceil(hi) + 0.2;
+  const X = s => box.L + box.pw * (L10(s) - L10(steps[0])) / (L10(steps[steps.length - 1]) - L10(steps[0]));
+  const Y = q => box.T + box.ph * (1 - (q - lo) / (hi - lo));
+  x.font = "11px ui-monospace, Menlo, monospace"; x.strokeStyle = css("--border"); x.fillStyle = css("--muted"); x.lineWidth = 1;
+  [2, 8, 32, 128, 512, 2048, 8192].forEach(s => { x.beginPath(); x.moveTo(X(s), box.T); x.lineTo(X(s), box.T + box.ph); x.stroke();
+    x.textAlign = "center"; x.fillText(s, X(s), box.T + box.ph + 14); });
+  const st = Math.max(1, Math.ceil((hi - lo) / 7));
+  for (let e = Math.ceil(lo); e <= Math.floor(hi); e += st) { x.beginPath(); x.moveTo(box.L, Y(e)); x.lineTo(box.L + box.pw, Y(e)); x.stroke();
+    x.textAlign = "right"; x.fillText("10" + sup(e), box.L - 6, Y(e) + 4); }
+  x.textAlign = "right"; x.fillText("n strips / K levels (log scale)", box.L + box.pw - 4, box.T + box.ph - 6);
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  const series = [[res[0].Rerr, "--accent", []], [res[0].Lerr, "--line2", []], [res[1].Rerr, "--accent", [7, 5]], [res[1].Lerr, "--line2", [7, 5]]];
+  series.forEach(([arr, col, dash]) => {
+    x.strokeStyle = css(col); x.fillStyle = css(col); x.lineWidth = 2; x.setLineDash(dash); x.beginPath();
+    arr.forEach((e, i) => { const px = X(steps[i]), py = Y(L10(Math.max(e, FLOOR))); i ? x.lineTo(px, py) : x.moveTo(px, py); });
+    x.stroke(); x.setLineDash([]);
+    arr.forEach((e, i) => { x.beginPath(); x.arc(X(steps[i]), Y(L10(Math.max(e, FLOOR))), dash.length ? 2.5 : 3.2, 0, 7); x.fill(); });
+  });
+  x.restore();
+}
+function tablesP2() {
+  const { res, steps } = P2, show = [4, 16, 64, 256, 1024, 4096];
+  let t = "<tr><th rowspan='2'>n = K</th>";
+  res.forEach((r, i) => { t += "<th colspan='2'>f" + "₁₂"[i] + " = " + r.F.short + "</th>"; });
+  t += "</tr><tr>" + res.map(() => "<th>Riemann error</th><th>Lebesgue error</th>").join("") + "</tr>";
+  show.forEach(s => {
+    const i = steps.indexOf(s);
+    t += "<tr><td>" + s + "</td>" + res.map(r => {
+      const R = r.Rerr[i], L = r.Lerr[i];
+      return "<td" + (R < L ? " class='ok'" : "") + ">" + sci(R) + "</td><td" + (L < R ? " class='ok'" : "") + ">" + sci(L) + "</td>";
+    }).join("") + "</tr>";
+  });
+  t += "<tr><td class='muted'>tape accuracy</td>" + res.map(r => "<td>—</td><td>" + sci(r.T.rawErr) + "</td>").join("") + "</tr>";
+  $("cmpTable").innerHTML = t;
+
+  const words = res.map((r, i) => {
+    const iK = steps.indexOf(64), R = r.Rerr[iK], L = r.Lerr[iK];
+    const better = R < L ? "Riemann" : "Lebesgue";
+    const ratio = Math.max(R, L) / Math.max(Math.min(R, L), 1e-16);
+    return "for f" + "₁₂"[i] + " = " + r.F.short + " " + better + " is " +
+      (ratio > 1e6 ? "far" : ratio.toFixed(ratio < 10 ? 1 : 0) + " times") + " more accurate";
+  });
+  $("cmpVerdict").innerHTML = "With 64 subdivisions, " + words.join(", and ") +
+    ". Riemann converges to the exact value; Lebesgue converges down to the accuracy of the measuring tape. " +
+    "In each row the green cell marks the smaller error.";
+}
+
+/* ---------- wiring ---------- */
+const opts = Object.entries(FUNCS).map(([k, F]) => "<option value='" + k + "'>" + F.name + "</option>").join("");
+$("f1").innerHTML = opts; $("f2").innerHTML = opts;
+$("f1").value = "sq"; $("f2").value = "osc";
+
+["mu", "sigma", "hstep", "rule"].forEach(id => $(id).addEventListener("change", runP1));
+$("x0").addEventListener("input", drawP1);
+["f1", "f2", "nvis", "kvis"].forEach(id => $(id).addEventListener("change", runP2));
+function drawAll() { drawP1(); drawP2(); }
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+runP1();
+runP2();
+})();
+</script>
+</body>
+</html>
