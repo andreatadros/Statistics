@@ -17,6 +17,7 @@ live in the browser.
 | 3 | Penetration scores, Law of Large Numbers, convergence in probability | [hw3](https://andreatadros.github.io/Statistics/hw3/) |
 | 4 | Welford recurrence, continuous penetration scores, mean and variance of the average | [hw4](https://andreatadros.github.io/Statistics/hw4/) |
 | 5 | CDF of a normal density by numerical integration, Riemann vs Lebesgue integral | [hw5](https://andreatadros.github.io/Statistics/hw5/) |
+| 6 | Contingency tables, conditional and marginal frequencies, χ² test of independence, association vs causality | [hw6](https://andreatadros.github.io/Statistics/hw6/) |
 
 ## Repository structure
 
