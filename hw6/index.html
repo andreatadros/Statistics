@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 6 - Statistics</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --muted: #5a5a72;
+    --accent: #7a1f2b;
+    --card: #f5f3f0;
+    --border: #d9d4cc;
+    --code-bg: #14141f;
+    --code-fg: #e8e8f0;
+    --band: rgba(122, 31, 43, 0.14);
+    --band2: rgba(31, 95, 122, 0.20);
+    --line2: #1f5f7a;
+    --good: #2e9e5b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+      --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+      --code-bg: #0c0c14; --code-fg: #e8e8f0;
+      --band: rgba(224, 138, 150, 0.18); --band2: rgba(108, 195, 224, 0.22);
+      --line2: #6cc3e0; --good: #5fd08e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+    --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+    --code-bg: #0c0c14; --code-fg: #e8e8f0;
+    --band: rgba(224, 138, 150, 0.18); --band2: rgba(108, 195, 224, 0.22);
+    --line2: #6cc3e0; --good: #5fd08e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6; padding: 16px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { color: var(--accent); font-size: 1.7rem; margin-top: 0.4em; }
+  h2 { color: var(--accent); font-size: 1.3rem; margin-top: 1.8em;
+       border-bottom: 2px solid var(--border); padding-bottom: 0.2em; }
+  h3 { font-size: 1.05rem; margin-top: 1.4em; }
+  .muted { color: var(--muted); }
+  section { background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin: 18px 0; min-width: 0; }
+  pre { background: var(--code-bg); color: var(--code-fg); padding: 12px 14px;
+        border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg);
+             border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+             overflow-x: auto; white-space: nowrap; }
+  canvas { display: block; width: 100%; background: var(--bg);
+           border: 1px solid var(--border); border-radius: 8px; }
+  .traj { height: 280px; }
+  .small { height: 200px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 8px 0;
+          font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; }
+  th { background: var(--border); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 12px 16px; align-items: end; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;
+                    color: var(--muted); }
+  input, select { font: inherit; padding: 6px 8px; border-radius: 6px;
+                  border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+  input[type="range"] { padding: 0; accent-color: var(--accent); }
+  button { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 6px;
+           border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+           cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--line2); outline-offset: 2px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+           gap: 10px; }
+  .grid3 figure { margin: 0; min-width: 0; }
+  .grid3 figcaption { font-size: 0.8rem; color: var(--muted); text-align: center;
+                      font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem;
+            color: var(--muted); margin: 6px 0; }
+  .sw { display: inline-block; width: 16px; height: 4px; vertical-align: middle;
+        margin-right: 6px; border-radius: 2px; }
+  .swd { display: inline-block; width: 18px; height: 0; vertical-align: middle;
+         margin-right: 6px; border-top: 3px dashed; }
+  .readout { font-variant-numeric: tabular-nums; }
+  .ok { color: var(--good); font-weight: 600; }
+  .bad { color: var(--accent); font-weight: 600; }
+  [hidden] { display: none !important; }
+  a { color: var(--line2); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+           gap: 10px; margin: 12px 0; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+          padding: 8px 12px; }
+  .stat .k { font-size: 0.78rem; color: var(--muted); }
+  .stat .v { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .verdict { background: var(--bg); border-left: 4px solid var(--accent); border-radius: 6px;
+             padding: 10px 14px; margin: 12px 0; }
+  .warn { color: var(--accent); }
+  td.lab, th.lab { text-align: left; }
+  td.tot, th.tot { font-weight: 600; }
+  textarea { font: 0.82rem ui-monospace, "SF Mono", Menlo, monospace; width: 100%;
+             min-height: 150px; padding: 8px; border-radius: 6px; border: 1px solid var(--border);
+             background: var(--bg); color: var(--fg); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0; }
+  .chk { flex-direction: row !important; align-items: center; gap: 6px !important; }
+</style>
+</head>
+<body>
+<main>
+<h1>Homework 6 — Statistical independence, contingency tables and the χ² test</h1>
+<p class="muted">Statistics — starting from the raw records of a bivariate dataset (X, Y), the
+page builds the contingency table, the marginal and conditional frequencies, and the table of
+the frequencies we would expect if X and Y were independent. The distance between the two
+tables is the χ² statistic, from which we get a p-value and a verdict. The p-value is then
+checked by simulation, and the last part recalls the theory and the difference between
+association and causality. Everything is computed live in your browser.</p>
+<p class="muted">Previous homework: <a href="../hw5/">Homework 5 — from density to CDF, and
+Riemann vs Lebesgue integration</a>.</p>
+
+<!-- ============================================================= -->
+<h2>The assignment</h2>
+<section>
+<p><strong>1.</strong> Given any bivariate dataset (X, Y), programmatically construct the
+contingency table and calculate the conditional and marginal frequencies.</p>
+<p><strong>2.</strong> Compute the expected frequencies under the assumption of independence.
+Calculate the chi-square statistic (optional: also the p-value).</p>
+<p><strong>3.</strong> Recall the theoretical concepts of independence in statistics and in
+probability. Interpret the results to determine whether the two variables are statistically
+independent or dependent. Briefly discuss the conclusions, distinguishing statistical
+association from causality.</p>
+<p class="muted">On the blackboard: “create a survey of X, Y on n statistical units and compute
+the contingency table and a measure of dependence”, with a table of colours (blue, black,
+green) against ages (25, 26, 27, 28), the cells nᵢⱼ and fᵢⱼ, the totals n.ⱼ, the conditional
+probabilities P(X | Y) and P(Y | X), and Σ (nᵢⱼ − n*ᵢⱼ)². That survey is the first dataset
+below.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 1 — The bivariate dataset</h2>
+<section>
+<p>A bivariate dataset is a list of n statistical units; for each unit we record two
+categorical variables, X and Y. Choose one of the datasets below. The two simulated ones
+come from a population in which the strength of the dependence is set by λ:</p>
+<ul>
+<li>with probability 1 − λ the unit gets X and Y drawn <em>independently</em>, each from
+its own distribution;</li>
+<li>with probability λ the unit gets X at random and then the value of Y that “goes with”
+that X (for example: brute-force attacks hit SSH, SQL injections hit the database).</li>
+</ul>
+<p>So λ = 0 means X and Y are independent by construction, and larger λ means stronger
+dependence. With the third option you can paste any dataset of your own, one unit per line.</p>
+
+<form id="pdata" class="controls" onsubmit="return false">
+  <label for="ds">dataset
+    <select id="ds">
+      <option value="survey">blackboard survey: favourite colour × age</option>
+      <option value="ids" selected>IDS alerts: attack type × target service</option>
+      <option value="custom">your own data (paste below)</option>
+    </select></label>
+  <label for="n" class="sim">n — statistical units
+    <input id="n" type="number" min="10" max="5000" step="10" value="500"></label>
+  <label for="lam" class="sim">λ — dependence strength: <span id="lamv"></span>
+    <input id="lam" type="range" min="0" max="1" step="0.01" value="0.3"></label>
+  <label for="seed" class="sim">random seed
+    <input id="seed" type="number" min="1" step="1" value="2026"></label>
+  <label for="alpha">significance level α
+    <select id="alpha">
+      <option value="0.10">0.10</option>
+      <option value="0.05" selected>0.05</option>
+      <option value="0.01">0.01</option>
+    </select></label>
+</form>
+<div class="row sim"><button id="resample" type="button">New sample (seed + 1)</button>
+  <span class="muted">draws a new set of n units from the same population</span></div>
+
+<div id="customBox" hidden>
+  <p class="muted">One unit per line, the two values separated by a comma, semicolon or tab.
+  Extra columns are ignored.</p>
+  <textarea id="csv" spellcheck="false" aria-label="Your bivariate dataset"></textarea>
+  <div class="row">
+    <label class="chk"><input id="hdr" type="checkbox" checked> first line holds the variable names</label>
+    <button id="useCsv" type="button">Analyse this data</button>
+  </div>
+</div>
+
+<p class="readout" id="dsInfo"></p>
+<h3>The first raw records</h3>
+<div class="tablewrap"><table id="rawTable"></table></div>
+<p class="muted">The tables below are built from this list of records, by counting.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 2 — Contingency table, marginal and conditional frequencies</h2>
+<section>
+<h3>Joint absolute frequencies nᵢⱼ (the contingency table)</h3>
+<p>nᵢⱼ = number of units with X = xᵢ and Y = yⱼ. The last column holds the row totals
+nᵢ. = Σⱼ nᵢⱼ and the last row the column totals n.ⱼ = Σᵢ nᵢⱼ: these are the
+<em>marginal</em> distributions of X and of Y. The dot means “summed over that index”.</p>
+<div class="tablewrap"><table id="tN"></table></div>
+
+<h3>Joint and marginal relative frequencies fᵢⱼ = nᵢⱼ / n</h3>
+<div class="tablewrap"><table id="tF"></table></div>
+
+<h3>Conditional frequencies of X given Y: f(xᵢ | yⱼ) = nᵢⱼ / n.ⱼ</h3>
+<p>Each column is the distribution of X inside one group of Y and sums to 1 (the
+“column profiles”). The last column is the marginal distribution of X, for comparison.</p>
+<div class="tablewrap"><table id="tXgY"></table></div>
+
+<h3>Conditional frequencies of Y given X: f(yⱼ | xᵢ) = nᵢⱼ / nᵢ.</h3>
+<p>Each row is the distribution of Y inside one group of X and sums to 1 (the “row
+profiles”). The last row is the marginal distribution of Y.</p>
+<div class="tablewrap"><table id="tYgX"></table></div>
+
+<h3>The column profiles, side by side</h3>
+<div class="legend" id="profLegend"></div>
+<canvas id="profChart" class="traj" aria-label="Distribution of X within each value of Y"></canvas>
+<p class="muted">Under independence, knowing Y tells us nothing about X: every bar would look
+like the last one (the marginal of X), up to sampling noise. Bars that look clearly different
+from each other are the visual sign of dependence.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 3 — Expected frequencies and the χ² statistic</h2>
+<section>
+<h3>Expected frequencies under independence</h3>
+<p>If X and Y were independent, the joint frequency would be the product of the marginal
+ones, fᵢⱼ = fᵢ. · f.ⱼ. Multiplying by n gives the count we would expect in each cell:</p>
+<p class="formula">n*ᵢⱼ = n · (nᵢ. / n) · (n.ⱼ / n) = nᵢ. · n.ⱼ / n</p>
+<p>The expected table has the same totals as the observed one; only the inside changes.</p>
+<div class="tablewrap"><table id="tE"></table></div>
+
+<h3>Contributions to χ²</h3>
+<p>Each cell contributes its squared gap from the expected count, scaled by the expected
+count:</p>
+<p class="formula">χ² = Σᵢ Σⱼ (nᵢⱼ − n*ᵢⱼ)² / n*ᵢⱼ</p>
+<p>Red cells hold more units than expected under independence, blue cells fewer. The colour
+is stronger when the standardised residual (nᵢⱼ − n*ᵢⱼ) / √n*ᵢⱼ is larger in absolute value
+(it is saturated at ±3).</p>
+<div class="tablewrap"><table id="tC"></table></div>
+
+<h3>Result</h3>
+<div class="stats" id="stats"></div>
+<div class="verdict" id="verdict"></div>
+<p class="muted" id="validity"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 4 — Checking the p-value by simulation</h2>
+<section>
+<p>The p-value of Part 3 comes from the χ² distribution, which is only an approximation
+for large n. Here we check it directly: we generate R new datasets of the same size in which
+X and Y are independent <em>by construction</em> (each unit draws X from the observed
+marginal of X and, separately, Y from the observed marginal of Y), compute χ² on each, and
+count how often chance alone produces a value at least as large as ours.</p>
+<form id="pmc" class="controls" onsubmit="return false">
+  <label for="R">R — simulated datasets
+    <select id="R">
+      <option value="1000">1 000</option>
+      <option value="2000" selected>2 000</option>
+      <option value="5000">5 000</option>
+    </select></label>
+</form>
+<div class="legend">
+  <span><span class="sw" style="background:var(--band2);height:10px"></span>χ² of the simulated independent datasets</span>
+  <span><span class="sw" style="background:var(--fg)"></span>χ² density with the same degrees of freedom</span>
+  <span><span class="swd" style="border-color:var(--accent)"></span>observed χ²</span>
+</div>
+<canvas id="mcChart" class="traj" aria-label="Distribution of chi-square under independence"></canvas>
+<p class="readout" id="mcRead"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 5 — Same association, more data</h2>
+<section>
+<p>Suppose we observed exactly the same proportions fᵢⱼ on k times as many units. Every
+count is multiplied by k, so every term (nᵢⱼ − n*ᵢⱼ)² / n*ᵢⱼ is multiplied by k as well:</p>
+<p class="formula">χ² = n · Σᵢ Σⱼ (fᵢⱼ − fᵢ. f.ⱼ)² / (fᵢ. f.ⱼ) = n · φ²</p>
+<div class="tablewrap"><table id="tScale"></table></div>
+<p class="muted">χ² and the p-value measure the <em>evidence</em> against independence, and
+evidence grows with n. Cramér’s V depends only on the proportions, so it measures the
+<em>strength</em> of the association. A tiny association becomes “significant” with enough
+data, and a strong one can go undetected in a small sample.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 6 — Theory</h2>
+<section>
+<h3>Independence in probability</h3>
+<p>Two events A and B are independent when</p>
+<p class="formula">P(A ∩ B) = P(A) · P(B) &nbsp;&nbsp;⇔&nbsp;&nbsp; P(A | B) = P(A) &nbsp;&nbsp;(when P(B) &gt; 0)</p>
+<p>so learning that B happened does not change the probability of A. Two discrete random
+variables X and Y are independent when this holds for every pair of values:</p>
+<p class="formula">P(X = xᵢ, Y = yⱼ) = P(X = xᵢ) · P(Y = yⱼ) &nbsp;&nbsp; for all i, j</p>
+<p>The joint distribution factorises into the product of the marginals. Equivalently, the
+conditional distribution of X given Y = yⱼ is the same for every j, and equals the marginal
+of X; the same holds with X and Y exchanged, because independence is symmetric. In general
+(also for continuous variables) the condition is F<sub>X,Y</sub>(x, y) = F<sub>X</sub>(x) ·
+F<sub>Y</sub>(y) for all x, y.</p>
+<p>Independence implies E[XY] = E[X]·E[Y], so Cov(X, Y) = 0. The converse is false: if X
+is uniform on {−1, 0, 1} and Y = X², then Cov(X, Y) = E[X³] − E[X]·E[X²] = 0, yet Y is a
+function of X. Zero correlation only rules out a <em>linear</em> relation; independence rules
+out every relation.</p>
+
+<h3>Independence in statistics</h3>
+<p>In statistics we do not know the probabilities: we have n observed units. The empirical
+version of the definition is that X and Y are <em>statistically independent in the data</em>
+when the joint relative frequencies factorise:</p>
+<p class="formula">fᵢⱼ = fᵢ. · f.ⱼ &nbsp;&nbsp;⇔&nbsp;&nbsp; nᵢⱼ = nᵢ. n.ⱼ / n = n*ᵢⱼ
+&nbsp;&nbsp;⇔&nbsp;&nbsp; f(xᵢ | yⱼ) = fᵢ. for all i, j</p>
+<p>that is, all the conditional profiles of Part 2 are equal to the marginal one. This
+almost never holds exactly (n*ᵢⱼ is usually not even an integer), even when the population
+is independent, because the sample adds random noise. So the statistical question is
+different: are the deviations nᵢⱼ − n*ᵢⱼ larger than what sampling alone would produce?
+This needs an index (how far the table is from independence) and a test (is that distance
+surprising).</p>
+
+<h3>The χ² index and the χ² test</h3>
+<p>χ² = 0 exactly when the observed table equals the expected one, and grows as the two
+tables move apart. Pearson’s test uses it to decide between</p>
+<p class="formula">H₀: X and Y are independent in the population &nbsp;&nbsp; vs &nbsp;&nbsp;
+H₁: they are dependent</p>
+<p>Under H₀ and for large n, χ² approximately follows a χ² distribution with
+(r − 1)(c − 1) degrees of freedom, where r and c are the numbers of categories of X and Y.
+The degrees of freedom count the cells that are free to vary: the table has r·c cells, but
+the expected table is built from the r − 1 free row proportions, the c − 1 free column
+proportions and n, so r·c − 1 − (r − 1) − (c − 1) = (r − 1)(c − 1). The p-value is
+P(χ²<sub>df</sub> ≥ observed χ²): the probability, if H₀ were true, of a table at least as far
+from independence as ours. If p &lt; α we reject independence; otherwise the data are
+<em>compatible</em> with independence. That is not a proof of independence: with few data
+a real but weak dependence may go unnoticed.</p>
+<p>The approximation is considered reliable when the expected counts are not too small
+(the usual rule: all n*ᵢⱼ ≥ 1 and at most 20% of them below 5). Part 4 avoids the
+approximation by simulating the distribution of χ² under H₀.</p>
+<p>Because χ² grows with n (Part 5), the strength of the association is measured by
+Cramér’s V, which rescales it to [0, 1]:</p>
+<p class="formula">V = √( χ² / (n · (min(r, c) − 1)) )</p>
+<p>V = 0 exactly when the table shows perfect empirical independence, and V = 1 when the
+association is perfect (one variable determines the other, if r = c). As a rough guide,
+V below 0.1 is negligible, 0.1–0.3 weak, 0.3–0.5 moderate, above 0.5 strong.</p>
+
+<h3>Association is not causation</h3>
+<p>Rejecting independence tells us that X and Y are <em>associated</em>: knowing one
+changes the distribution of the other. It does not tell us that one causes the other. The
+χ² statistic is even symmetric in X and Y, so it cannot tell which way an effect would go.
+An association can come from:</p>
+<ul>
+<li><strong>Chance.</strong> At level α, an independent pair is declared dependent with
+probability α; testing many pairs, some will come out “significant” by luck.</li>
+<li><strong>A confounder.</strong> A third variable Z influences both X and Y. Students of
+different ages may prefer different colours because of fashion in the years they grew up,
+not because age acts on taste.</li>
+<li><strong>Reverse causation.</strong> The effect may go from Y to X instead of from X to Y.</li>
+<li><strong>Selection.</strong> Only some units enter the dataset. An IDS log contains only
+the attacks the IDS detected, so its rules shape which (attack, service) pairs appear.</li>
+</ul>
+<p>A confounder can even reverse an association. Two intrusion detection systems are tested
+on easy and hard attacks:</p>
+<div class="tablewrap"><table>
+<tr><th class="lab">detection rate</th><th>easy attacks</th><th>hard attacks</th><th>all attacks</th></tr>
+<tr><td class="lab">old IDS</td><td>270 / 300 = 90%</td><td>40 / 100 = 40%</td><td class="tot">310 / 400 = 77.5%</td></tr>
+<tr><td class="lab">new IDS</td><td>95 / 100 = 95%</td><td>135 / 300 = 45%</td><td class="tot">230 / 400 = 57.5%</td></tr>
+</table></div>
+<p>The new IDS is better on easy attacks and on hard attacks, yet worse overall, because it
+was tested mostly on hard attacks (Simpson’s paradox). Looking only at the table
+“IDS × detected”, the association goes the wrong way; the difficulty of the attack is the
+confounder. To claim causation we need more than an association: a randomised experiment
+(here, assigning attacks to the two systems at random), or measuring and controlling the
+confounders (comparing within each level of Z), together with knowledge of the mechanism.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Core of the computation</h2>
+<section>
+<pre><code>// records: array of [i, j], the category indices of X and Y for each unit
+const N = Array.from({length: r}, () =&gt; new Array(c).fill(0));
+for (const [i, j] of records) N[i][j]++;                       // contingency table
+
+const rowSum = N.map(row =&gt; row.reduce((s, v) =&gt; s + v, 0));   // nᵢ.  (marginal of X)
+const colSum = N[0].map((_, j) =&gt; N.reduce((s, row) =&gt; s + row[j], 0)); // n.ⱼ
+const n = rowSum.reduce((s, v) =&gt; s + v, 0);
+
+const f      = (i, j) =&gt; N[i][j] / n;          // joint relative frequency
+const fXgY   = (i, j) =&gt; N[i][j] / colSum[j];  // f(xᵢ | yⱼ)
+const fYgX   = (i, j) =&gt; N[i][j] / rowSum[i];  // f(yⱼ | xᵢ)
+const E      = (i, j) =&gt; rowSum[i] * colSum[j] / n;  // expected under independence
+
+let chi2 = 0;
+for (let i = 0; i &lt; r; i++)
+  for (let j = 0; j &lt; c; j++) chi2 += (N[i][j] - E(i, j)) ** 2 / E(i, j);
+
+const df = (r - 1) * (c - 1);
+const p  = gammaQ(df / 2, chi2 / 2);           // P(χ²_df ≥ chi2), upper incomplete gamma
+const V  = Math.sqrt(chi2 / (n * (Math.min(r, c) - 1)));</code></pre>
+<p class="muted">The p-value uses the regularised upper incomplete gamma function
+Q(k/2, x/2) (series for small x, continued fraction for large x, with the Lanczos
+approximation of ln Γ). Simulations use a seeded generator (mulberry32), so the same seed
+always gives the same dataset.</p>
+</section>
+
+<h2>Conclusions</h2>
+<section>
+<ul>
+<li>The contingency table is just a count of the records by pair of categories; the marginal
+frequencies are its row and column totals, and the conditional frequencies are its columns
+(or rows) divided by their totals.</li>
+<li>Independence means that the joint distribution is the product of the marginals, or
+equally that every conditional profile equals the marginal one. In a sample this never
+holds exactly, so we compare the observed table with the expected table n*ᵢⱼ = nᵢ. n.ⱼ / n.</li>
+<li>The χ² statistic measures the distance between the two tables, and its p-value says
+whether the distance is larger than sampling noise. With λ = 0 the test rejects only about a
+fraction α of the time (try a few seeds); as λ grows the profiles separate, χ² grows and
+independence is rejected.</li>
+<li>The simulation of Part 4 reproduces the χ² distribution, so the approximate p-value can
+be trusted when the expected counts are not too small.</li>
+<li>χ² grows with n, so it measures evidence; Cramér’s V measures strength.</li>
+<li>A significant χ² establishes an association, not a cause: chance, confounders, reverse
+causation and selection can all produce one, and a confounder can even reverse it
+(Simpson’s paradox).</li>
+</ul>
+</section>
+</main>
+
+<script>
+(function () {
+"use strict";
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+
+/* ---------- seeded random generator ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const cumul = p => { const c = []; let s = 0; for (const v of p) { s += v; c.push(s); } return c.map(v => v / s); };
+function pick(cum, u) { let lo = 0, hi = cum.length - 1;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (u < cum[m]) hi = m; else lo = m + 1; } return lo; }
+
+/* ---------- special functions: ln Γ and the incomplete gamma ---------- */
+const LG = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+  -176.61503916999185, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+function lnGamma(z) {
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lnGamma(1 - z);
+  z -= 1; let x = LG[0]; for (let i = 1; i < 9; i++) x += LG[i] / (z + i);
+  const t = z + 7.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+function gammaP_series(a, x) {
+  let sum = 1 / a, del = sum, ap = a;
+  for (let k = 0; k < 1000; k++) { ap += 1; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-16) break; }
+  return sum * Math.exp(-x + a * Math.log(x) - lnGamma(a));
+}
+function gammaQ_cf(a, x) {               // modified Lentz
+  const FP = 1e-300; let b = x + 1 - a, c = 1 / FP, d = 1 / b, h = d;
+  for (let i = 1; i < 1000; i++) {
+    const an = -i * (i - a); b += 2;
+    d = an * d + b; if (Math.abs(d) < FP) d = FP;
+    c = b + an / c; if (Math.abs(c) < FP) c = FP;
+    d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-16) break;
+  }
+  return Math.exp(-x + a * Math.log(x) - lnGamma(a)) * h;
+}
+function gammaQ(a, x) {                  // regularised upper incomplete gamma Q(a, x)
+  if (x <= 0) return 1;
+  return x < a + 1 ? 1 - gammaP_series(a, x) : gammaQ_cf(a, x);
+}
+const chi2sf = (x, k) => gammaQ(k / 2, x / 2);
+const chi2pdf = (x, k) => x <= 0 ? (k === 2 ? 0.5 : k < 2 ? Infinity : 0)
+  : Math.exp((k / 2 - 1) * Math.log(x) - x / 2 - (k / 2) * Math.LN2 - lnGamma(k / 2));
+
+/* ---------- drawing helpers (as in the previous homework) ---------- */
+function setup(c) {
+  const r = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.round(w * r); c.height = Math.round(h * r);
+  const x = c.getContext("2d"); x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  return { x, w, h };
+}
+function niceTicks(lo, hi, count) {
+  const span = hi - lo; if (span <= 0) return [lo];
+  const raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const fmt = v => {
+  const a = Math.abs(v);
+  if (a === 0) return "0";
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  if (a >= 1) return v.toFixed(2).replace(/\.?0+$/, "");
+  return v.toFixed(3).replace(/\.?0+$/, "");
+};
+const mkBox = (w, h, L, B) => { const b = { L: L || 56, R: 12, T: 10, B: B || 24 };
+  b.pw = w - b.L - b.R; b.ph = h - b.T - b.B; return b; };
+const sup = s => String(s).replace(/[-\d]/g, d => d === "-" ? "⁻" : "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+const sci = v => {
+  if (v === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(v))), m = v / Math.pow(10, e);
+  return m.toFixed(2) + "·10" + sup(e);
+};
+const pfmt = p => p >= 0.001 ? p.toFixed(4) : p < 1e-300 ? "&lt; 10⁻³⁰⁰" : sci(p);
+function clamp(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
+const PAL = ["#7a1f2b", "#1f5f7a", "#2e9e5b", "#c98a1b", "#6b4fa0", "#b5527a",
+             "#4a8f8f", "#8a6d3b", "#3d5a99", "#9c3d3d", "#5b7f2e", "#777777"];
+
+/* =================================================================
+   Part 1 — datasets
+   ================================================================= */
+const PRESETS = {
+  survey: { xName: "favourite colour", yName: "age",
+    X: ["blue", "black", "green", "red"], pX: [0.35, 0.25, 0.2, 0.2],
+    Y: ["25", "26", "27", "28"], pY: [0.3, 0.3, 0.2, 0.2],
+    pattern: [0, 1, 2, 3], n: 200, lam: 0.15,
+    story: "the blackboard survey: each student gives a favourite colour and an age; the “linked” age of blue is 25, of black 26, of green 27, of red 28" },
+  ids: { xName: "attack type", yName: "target service",
+    X: ["port scan", "brute force", "malware", "phishing", "SQL injection"], pX: [0.35, 0.2, 0.15, 0.15, 0.15],
+    Y: ["web", "SSH", "mail", "database"], pY: [0.4, 0.25, 0.2, 0.15],
+    pattern: [0, 1, 0, 2, 3], n: 500, lam: 0.3,
+    story: "alerts of an intrusion detection system: the type of attack and the service it targets; the linked services are scan → web, brute force → SSH, malware → web, phishing → mail, SQL injection → database" },
+};
+
+function simulate(P, n, lam, seed) {
+  const rnd = mulberry32(seed), cX = cumul(P.pX), cY = cumul(P.pY), recs = [];
+  for (let k = 0; k < n; k++) {
+    const i = pick(cX, rnd());
+    const j = rnd() < lam ? P.pattern[i] : pick(cY, rnd());
+    recs.push([P.X[i], P.Y[j]]);
+  }
+  return recs;
+}
+function populationV(P, lam) {          // strength of the dependence in the population
+  const r = P.X.length, c = P.Y.length, sx = P.pX.reduce((a, b) => a + b), sy = P.pY.reduce((a, b) => a + b);
+  const p = P.X.map((_, i) => P.Y.map((_, j) => (P.pX[i] / sx) * ((1 - lam) * P.pY[j] / sy + (j === P.pattern[i] ? lam : 0))));
+  const pr = p.map(row => row.reduce((a, b) => a + b)), pc = P.Y.map((_, j) => p.reduce((s, row) => s + row[j], 0));
+  let phi2 = 0;
+  for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) if (pr[i] > 0 && pc[j] > 0)
+    phi2 += (p[i][j] - pr[i] * pc[j]) ** 2 / (pr[i] * pc[j]);
+  const rr = pr.filter(v => v > 0).length, cc = pc.filter(v => v > 0).length;
+  return Math.sqrt(phi2 / (Math.min(rr, cc) - 1));
+}
+
+function defaultCsv() {
+  const rows = [["TCP", "allowed", 12], ["TCP", "blocked", 6], ["UDP", "allowed", 5],
+                ["UDP", "blocked", 7], ["ICMP", "allowed", 2], ["ICMP", "blocked", 8]];
+  const lines = []; rows.forEach(([a, b, k]) => { for (let t = 0; t < k; t++) lines.push(a + "," + b); });
+  const rnd = mulberry32(6);
+  for (let i = lines.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [lines[i], lines[j]] = [lines[j], lines[i]]; }
+  return "protocol,firewall action\n" + lines.join("\n");
+}
+function parseCsv(text, header) {
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length);
+  let xName = "X", yName = "Y";
+  if (header && lines.length) { const h = lines.shift().split(/[,;\t]/).map(s => s.trim());
+    if (h[0]) xName = h[0]; if (h[1]) yName = h[1]; }
+  const recs = []; let bad = 0;
+  lines.forEach(l => { const f = l.split(/[,;\t]/).map(s => s.trim());
+    if (f.length >= 2 && f[0] !== "" && f[1] !== "") recs.push([f[0], f[1]]); else bad++; });
+  return { xName, yName, recs, bad };
+}
+function levels(values) {               // categories: numeric order if all numeric, else first appearance
+  const seen = []; values.forEach(v => { if (!seen.includes(v)) seen.push(v); });
+  if (seen.every(v => v !== "" && Number.isFinite(Number(v)))) seen.sort((a, b) => Number(a) - Number(b));
+  return seen;
+}
+
+/* =================================================================
+   Part 2–3 — contingency table and χ²
+   ================================================================= */
+function analyse(xName, yName, recs, order) {
+  const X = order ? order.X.filter(v => recs.some(r => r[0] === v)) : levels(recs.map(r => r[0]));
+  const Y = order ? order.Y.filter(v => recs.some(r => r[1] === v)) : levels(recs.map(r => r[1]));
+  const ix = new Map(X.map((v, i) => [v, i])), iy = new Map(Y.map((v, j) => [v, j]));
+  const r = X.length, c = Y.length;
+  const N = Array.from({ length: r }, () => new Array(c).fill(0));
+  for (const [a, b] of recs) N[ix.get(a)][iy.get(b)]++;
+  const rowSum = N.map(row => row.reduce((s, v) => s + v, 0));
+  const colSum = Y.map((_, j) => N.reduce((s, row) => s + row[j], 0));
+  const n = recs.length;
+  const E = N.map((row, i) => row.map((_, j) => rowSum[i] * colSum[j] / n));
+  let chi2 = 0; const C = N.map((row, i) => row.map((v, j) => { const t = (v - E[i][j]) ** 2 / E[i][j]; chi2 += t; return t; }));
+  const df = (r - 1) * (c - 1);
+  const p = df > 0 ? chi2sf(chi2, df) : NaN;
+  const V = df > 0 ? Math.sqrt(chi2 / (n * (Math.min(r, c) - 1))) : NaN;
+  let maxDev = 0;
+  for (let i = 0; i < r; i++) for (let j = 0; j < c; j++)
+    maxDev = Math.max(maxDev, Math.abs(N[i][j] / n - (rowSum[i] / n) * (colSum[j] / n)));
+  return { xName, yName, recs, X, Y, r, c, N, rowSum, colSum, n, E, C, chi2, df, p, V, maxDev };
+}
+
+/* ---------- tables ---------- */
+function table(A, cell, opts) {
+  const { X, Y, r, c } = A;
+  const corner = opts.corner || (esc(A.xName) + " \\ " + esc(A.yName));
+  let t = "<tr><th class='lab'>" + corner + "</th>" + Y.map(y => "<th>" + esc(y) + "</th>").join("") +
+          (opts.lastCol ? "<th class='tot'>" + opts.lastCol + "</th>" : "") + "</tr>";
+  for (let i = 0; i < r; i++) {
+    t += "<tr><td class='lab'>" + esc(X[i]) + "</td>";
+    for (let j = 0; j < c; j++) t += cell(i, j);
+    if (opts.lastCol) t += "<td class='tot'>" + opts.rowEnd(i) + "</td>";
+    t += "</tr>";
+  }
+  if (opts.lastRow) {
+    t += "<tr><td class='lab tot'>" + opts.lastRow + "</td>";
+    for (let j = 0; j < c; j++) t += "<td class='tot'>" + opts.colEnd(j) + "</td>";
+    if (opts.lastCol) t += "<td class='tot'>" + opts.corner2 + "</td>";
+    t += "</tr>";
+  }
+  return t;
+}
+const f3 = v => v.toFixed(3);
+const f1 = v => v < 10 ? v.toFixed(2) : v.toFixed(1);
+
+function renderTables(A) {
+  const { N, E, C, rowSum, colSum, n } = A;
+  $("tN").innerHTML = table(A, (i, j) => "<td>" + N[i][j] + "</td>",
+    { lastCol: "nᵢ.", rowEnd: i => rowSum[i], lastRow: "n.ⱼ", colEnd: j => colSum[j], corner2: "n = " + n });
+  $("tF").innerHTML = table(A, (i, j) => "<td>" + f3(N[i][j] / n) + "</td>",
+    { lastCol: "fᵢ.", rowEnd: i => f3(rowSum[i] / n), lastRow: "f.ⱼ", colEnd: j => f3(colSum[j] / n), corner2: "1" });
+  $("tXgY").innerHTML = table(A, (i, j) => "<td>" + f3(N[i][j] / colSum[j]) + "</td>",
+    { lastCol: "marginal fᵢ.", rowEnd: i => f3(rowSum[i] / n), lastRow: "sum", colEnd: () => "1", corner2: "1" });
+  $("tYgX").innerHTML = table(A, (i, j) => "<td>" + f3(N[i][j] / rowSum[i]) + "</td>",
+    { lastCol: "sum", rowEnd: () => "1", lastRow: "marginal f.ⱼ", colEnd: j => f3(colSum[j] / n), corner2: "1" });
+  $("tE").innerHTML = table(A, (i, j) => "<td" + (E[i][j] < 5 ? " class='warn'" : "") + ">" + f1(E[i][j]) + "</td>",
+    { lastCol: "nᵢ.", rowEnd: i => rowSum[i], lastRow: "n.ⱼ", colEnd: j => colSum[j], corner2: "n = " + n });
+  $("tC").innerHTML = table(A, (i, j) => {
+    const z = (N[i][j] - E[i][j]) / Math.sqrt(E[i][j]), a = Math.round(Math.min(1, Math.abs(z) / 3) * 55);
+    const col = z > 0 ? "var(--accent)" : "var(--line2)";
+    return "<td style='background:color-mix(in srgb, " + col + " " + a + "%, transparent)' title='observed " +
+      N[i][j] + ", expected " + f1(E[i][j]) + ", residual " + z.toFixed(2) + "'>" + C[i][j].toFixed(3) +
+      "<br><span class='muted' style='font-size:0.75rem'>" + N[i][j] + " vs " + f1(E[i][j]) + "</span></td>";
+  }, { lastCol: "row sum", rowEnd: i => C[i].reduce((s, v) => s + v, 0).toFixed(3),
+       lastRow: "column sum", colEnd: j => C.reduce((s, row) => s + row[j], 0).toFixed(3),
+       corner2: "χ² = " + A.chi2.toFixed(3) });
+  $("profLegend").innerHTML = A.X.map((x, i) => "<span><span class='sw' style='background:" + PAL[i % PAL.length] +
+    ";height:10px'></span>" + esc(x) + "</span>").join("");
+}
+
+function strength(V) { return V < 0.1 ? "negligible" : V < 0.3 ? "weak" : V < 0.5 ? "moderate" : "strong"; }
+function renderResult(A, alpha) {
+  const stat = (k, v) => "<div class='stat'><div class='k'>" + k + "</div><div class='v'>" + v + "</div></div>";
+  if (A.df === 0) {
+    $("stats").innerHTML = stat("χ²", "—");
+    $("verdict").innerHTML = "One of the two variables takes a single value, so there is nothing to test: " +
+      "a constant is independent of anything.";
+    $("validity").textContent = ""; return;
+  }
+  const crit = critical(A.df, alpha);
+  $("stats").innerHTML = stat("χ² statistic", A.chi2.toFixed(3)) + stat("degrees of freedom (r−1)(c−1)", A.df) +
+    stat("critical value χ²<sub>" + A.df + "; " + (1 - alpha).toFixed(2) + "</sub>", crit.toFixed(3)) +
+    stat("p-value P(χ²<sub>" + A.df + "</sub> ≥ " + fmt(A.chi2) + ")", pfmt(A.p)) +
+    stat("Cramér’s V", A.V.toFixed(3)) + stat("max |fᵢⱼ − fᵢ. f.ⱼ|", A.maxDev.toFixed(4));
+  // most over-represented cell
+  let best = null;
+  for (let i = 0; i < A.r; i++) for (let j = 0; j < A.c; j++) {
+    const z = (A.N[i][j] - A.E[i][j]) / Math.sqrt(A.E[i][j]);
+    if (!best || z > best.z) best = { i, j, z };
+  }
+  const dep = A.p < alpha;
+  let v = "<strong>" + (dep ? "Independence is rejected: " + esc(A.xName) + " and " + esc(A.yName) +
+      " are statistically dependent (associated)." : "Independence is not rejected: the data are compatible with " +
+      esc(A.xName) + " and " + esc(A.yName) + " being independent.") + "</strong> ";
+  v += "χ² = " + A.chi2.toFixed(2) + (dep ? " is above" : " is below") + " the critical value " + crit.toFixed(2) +
+       ", i.e. p = " + pfmt(A.p) + (dep ? " &lt; " : " ≥ ") + "α = " + alpha + ". ";
+  if (dep) {
+    v += "If the variables were independent, a table this far from the expected one would appear " +
+      (A.p < 1e-4 ? "practically never" : "in only " + (100 * A.p).toPrecision(2) + "% of samples") + ". ";
+    v += "The association is " + strength(A.V) + " (V = " + A.V.toFixed(3) + "). The most over-represented " +
+      "combination is " + esc(A.xName) + " = <em>" + esc(A.X[best.i]) + "</em> with " + esc(A.yName) + " = <em>" +
+      esc(A.Y[best.j]) + "</em>: " + A.N[best.i][best.j] + " units observed against " + f1(A.E[best.i][best.j]) + " expected.";
+  } else {
+    v += "Differences this large between observed and expected counts would appear in " +
+      (100 * A.p).toPrecision(2) + "% of samples even if the variables were independent, so they can be " +
+      "explained by chance. This does not prove independence: a weak dependence may need more data to show up (Part 5).";
+  }
+  if (SIM && SIM.lam === 0) v += " <span class='muted'>(Here λ = 0, so the population is independent by construction: " +
+    "a rejection would be a false positive, which happens with probability α.)</span>";
+  $("verdict").innerHTML = v;
+  let small = 0, tiny = 0; A.E.forEach(row => row.forEach(e => { if (e < 5) small++; if (e < 1) tiny++; }));
+  const cells = A.r * A.c;
+  $("validity").innerHTML = small === 0
+    ? "All expected counts are at least 5, so the χ² approximation of the p-value is reliable."
+    : "<span class='warn'>" + small + " of " + cells + " expected counts are below 5 (" + (100 * small / cells).toFixed(0) +
+      "%)" + (tiny ? ", " + tiny + " below 1" : "") + ".</span> " +
+      (small / cells > 0.2 || tiny ? "The χ² approximation may be poor: trust the simulated p-value of Part 4 more."
+                                  : "This is within the usual rule (at most 20% below 5, none below 1).");
+}
+function critical(df, alpha) {          // invert the survival function by bisection
+  let lo = 0, hi = Math.max(10, df * 10);
+  while (chi2sf(hi, df) > alpha) hi *= 2;
+  for (let k = 0; k < 200; k++) { const m = (lo + hi) / 2; if (chi2sf(m, df) > alpha) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+
+/* ---------- chart: column profiles ---------- */
+function drawProfiles() {
+  if (!A) return;
+  const c = $("profChart"), { x, w, h } = setup(c), box = mkBox(w, h, 44, 38);
+  const nb = A.c + 1, slot = box.pw / nb, bw = Math.min(70, slot * 0.7);
+  const Y = v => box.T + box.ph * (1 - v);
+  x.font = "11px ui-monospace, Menlo, monospace"; x.lineWidth = 1;
+  [0, 0.25, 0.5, 0.75, 1].forEach(v => { x.strokeStyle = css("--border"); x.beginPath(); x.moveTo(box.L, Y(v));
+    x.lineTo(box.L + box.pw, Y(v)); x.stroke(); x.fillStyle = css("--muted"); x.textAlign = "right"; x.fillText(fmt(v), box.L - 6, Y(v) + 4); });
+  for (let b = 0; b < nb; b++) {
+    const cx = box.L + slot * (b + 0.5), tot = b < A.c ? A.colSum[b] : A.n;
+    let acc = 0;
+    for (let i = 0; i < A.r; i++) {
+      const v = (b < A.c ? A.N[i][b] : A.rowSum[i]) / tot;
+      x.fillStyle = PAL[i % PAL.length];
+      x.fillRect(cx - bw / 2, Y(acc + v), bw, Y(acc) - Y(acc + v));
+      if (Y(acc) - Y(acc + v) > 14 && bw > 30) { x.fillStyle = "#fff"; x.textAlign = "center";
+        x.fillText((100 * v).toFixed(0) + "%", cx, (Y(acc) + Y(acc + v)) / 2 + 4); }
+      acc += v;
+    }
+    if (b === A.c) { x.strokeStyle = css("--fg"); x.lineWidth = 2; x.strokeRect(cx - bw / 2, Y(1), bw, Y(0) - Y(1)); x.lineWidth = 1; }
+    x.fillStyle = css("--muted"); x.textAlign = "center";
+    const lab = b < A.c ? A.Y[b] : "marginal";
+    x.fillText(lab.length > 12 ? lab.slice(0, 11) + "…" : lab, cx, box.T + box.ph + 14);
+    x.fillText("n = " + tot, cx, box.T + box.ph + 28);
+  }
+}
+
+/* =================================================================
+   Part 4 — Monte Carlo under independence
+   ================================================================= */
+function monteCarlo(A, R, seed) {
+  const rnd = mulberry32(seed ^ 0x9e3779b9), cX = cumul(A.rowSum), cY = cumul(A.colSum);
+  const { r, c, n } = A, cnt = new Int32Array(r * c), rs = new Int32Array(r), cs = new Int32Array(c), out = new Float64Array(R);
+  for (let k = 0; k < R; k++) {
+    cnt.fill(0); rs.fill(0); cs.fill(0);
+    for (let u = 0; u < n; u++) { const i = pick(cX, rnd()), j = pick(cY, rnd()); cnt[i * c + j]++; rs[i]++; cs[j]++; }
+    let s = 0;
+    for (let i = 0; i < r; i++) if (rs[i]) for (let j = 0; j < c; j++) if (cs[j]) {
+      const e = rs[i] * cs[j] / n; s += (cnt[i * c + j] - e) ** 2 / e; }
+    out[k] = s;
+  }
+  return out;
+}
+let MC = null;
+function runMC() {
+  if (!A || A.df === 0) { MC = null; $("mcRead").textContent = ""; drawMC(); return; }
+  const R = Number($("R").value), sims = monteCarlo(A, R, SIM ? SIM.seed : 7);
+  let ge = 0, mean = 0; for (const s of sims) { if (s >= A.chi2 - 1e-9) ge++; mean += s; } mean /= R;
+  let rej = 0; const crit = critical(A.df, ALPHA); for (const s of sims) if (s > crit) rej++;
+  MC = { sims, R, ge, pEmp: (ge + 1) / (R + 1), mean, rej };
+  drawMC();
+  $("mcRead").innerHTML = "Simulated p-value: " + ge + " of " + R + " independent datasets reach χ² ≥ " +
+    A.chi2.toFixed(2) + ", so p ≈ (" + ge + " + 1) / (" + R + " + 1) = <strong>" + MC.pEmp.toFixed(4) +
+    "</strong>, against <strong>" + pfmt(A.p) + "</strong> from the χ² distribution" +
+    (ge === 0 ? " (with no exceedance, the simulation can only say p &lt; " + (1 / (R + 1)).toFixed(4) + ")" : "") +
+    ". The mean of the simulated χ² is " + mean.toFixed(2) + ", close to the degrees of freedom (" + A.df +
+    "), which is the mean of a χ²<sub>" + A.df + "</sub> variable. Under independence the test rejected " +
+    rej + " times out of " + R + " (" + (100 * rej / R).toFixed(1) + "%), close to α = " + (100 * ALPHA) + "%.";
+}
+function drawMC() {
+  const c = $("mcChart"), { x, w, h } = setup(c), box = mkBox(w, h, 52);
+  if (!MC) return;
+  const s = Array.from(MC.sims).sort((a, b) => a - b);
+  let hi = Math.max(s[Math.floor(0.995 * (s.length - 1))], A.df * 2.5);
+  const obsIn = A.chi2 <= hi * 1.6; if (obsIn) hi = Math.max(hi, A.chi2 * 1.08);
+  const B = 40, bw = hi / B, hist = new Array(B).fill(0);
+  for (const v of s) { const b = Math.floor(v / bw); if (b < B) hist[b]++; }
+  const dens = hist.map(k => k / (MC.R * bw));
+  let ymax = Math.max(...dens);
+  for (let k = 1; k <= 200; k++) { const d = chi2pdf(hi * k / 200, A.df); if (Number.isFinite(d)) ymax = Math.max(ymax, d); }
+  ymax = Math.min(ymax, Math.max(...dens) * 1.6) * 1.1;
+  const X = v => box.L + box.pw * v / hi, Y = v => box.T + box.ph * (1 - v / ymax);
+  x.font = "11px ui-monospace, Menlo, monospace"; x.lineWidth = 1;
+  niceTicks(0, hi, 8).forEach(v => { x.strokeStyle = css("--border"); x.beginPath(); x.moveTo(X(v), box.T); x.lineTo(X(v), box.T + box.ph); x.stroke();
+    x.fillStyle = css("--muted"); x.textAlign = "center"; x.fillText(fmt(v), X(v), box.T + box.ph + 14); });
+  niceTicks(0, ymax, 4).forEach(v => { x.strokeStyle = css("--border"); x.beginPath(); x.moveTo(box.L, Y(v)); x.lineTo(box.L + box.pw, Y(v)); x.stroke();
+    x.fillStyle = css("--muted"); x.textAlign = "right"; x.fillText(fmt(v), box.L - 6, Y(v) + 4); });
+  x.save(); x.beginPath(); x.rect(box.L, box.T, box.pw, box.ph); x.clip();
+  x.fillStyle = css("--band2");
+  dens.forEach((d, b) => x.fillRect(X(b * bw) + 0.5, Y(d), X(bw) - X(0) - 1, Y(0) - Y(d)));
+  x.strokeStyle = css("--fg"); x.lineWidth = 2; x.beginPath(); let started = false;
+  for (let k = 1; k <= 300; k++) { const v = hi * k / 300, d = chi2pdf(v, A.df);
+    if (!Number.isFinite(d)) continue; started ? x.lineTo(X(v), Y(d)) : x.moveTo(X(v), Y(d)); started = true; }
+  x.stroke();
+  x.restore();
+  x.strokeStyle = css("--accent"); x.fillStyle = css("--accent"); x.lineWidth = 2; x.setLineDash([6, 4]);
+  const xo = obsIn ? X(A.chi2) : box.L + box.pw - 2;
+  x.beginPath(); x.moveTo(xo, box.T); x.lineTo(xo, box.T + box.ph); x.stroke(); x.setLineDash([]);
+  x.textAlign = obsIn && xo < box.L + box.pw * 0.7 ? "left" : "right";
+  x.fillText((obsIn ? "" : "→ ") + "observed χ² = " + fmt(A.chi2), xo + (x.textAlign === "left" ? 6 : -6), box.T + 14);
+  x.fillStyle = css("--muted"); x.textAlign = "right"; x.fillText("χ²", box.L + box.pw - 4, box.T + box.ph - 6);
+}
+
+/* =================================================================
+   Part 5 — scaling
+   ================================================================= */
+function renderScale(A) {
+  if (A.df === 0) { $("tScale").innerHTML = ""; return; }
+  const ks = [0.1, 0.25, 0.5, 1, 2, 4, 10];
+  let t = "<tr><th>k</th><th>units k·n</th><th>χ² = k · " + A.chi2.toFixed(2) + "</th><th>p-value</th>" +
+          "<th>verdict at α = " + ALPHA + "</th><th>Cramér’s V</th></tr>";
+  ks.forEach(k => {
+    const x2 = k * A.chi2, p = chi2sf(x2, A.df), V = Math.sqrt(x2 / (k * A.n * (Math.min(A.r, A.c) - 1)));
+    t += "<tr" + (k === 1 ? " style='font-weight:600'" : "") + "><td>" + k + (k === 1 ? " (our data)" : "") + "</td><td>" +
+      Math.round(k * A.n).toLocaleString("en") + "</td><td>" + fmt(x2) + "</td><td>" + pfmt(p) + "</td><td class='" +
+      (p < ALPHA ? "bad'>dependent" : "ok'>compatible with independence") + "</td><td>" + V.toFixed(3) + "</td></tr>";
+  });
+  $("tScale").innerHTML = t;
+}
+
+/* =================================================================
+   wiring
+   ================================================================= */
+let A = null, SIM = null, ALPHA = 0.05;
+function rawPreview(recs, xName, yName) {
+  let t = "<tr><th>unit</th><th>" + esc(xName) + "</th><th>" + esc(yName) + "</th></tr>";
+  recs.slice(0, 8).forEach((r, k) => { t += "<tr><td>" + (k + 1) + "</td><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td></tr>"; });
+  if (recs.length > 8) t += "<tr><td colspan='3' class='muted'>… " + (recs.length - 8).toLocaleString("en") + " more</td></tr>";
+  $("rawTable").innerHTML = t;
+}
+function run() {
+  ALPHA = Number($("alpha").value);
+  const key = $("ds").value;
+  document.querySelectorAll(".sim").forEach(el => { el.hidden = key === "custom"; });
+  $("customBox").hidden = key !== "custom";
+  let xName, yName, recs;
+  if (key === "custom") {
+    const P = parseCsv($("csv").value, $("hdr").checked);
+    SIM = null; xName = P.xName; yName = P.yName; recs = P.recs;
+    if (recs.length < 2) { $("dsInfo").innerHTML = "<span class='warn'>Paste at least two lines with two values each.</span>"; return; }
+    $("dsInfo").innerHTML = "Your data: <strong>" + recs.length + "</strong> units" +
+      (P.bad ? " (" + P.bad + " lines skipped: fewer than two values)" : "") + ".";
+  } else {
+    const P = PRESETS[key];
+    const n = Math.round(clamp($("n").value, 10, 5000, P.n)), lam = clamp($("lam").value, 0, 1, P.lam);
+    const seed = Math.round(clamp($("seed").value, 1, 2 ** 31, 2026));
+    SIM = { key, n, lam, seed };
+    xName = P.xName; yName = P.yName; recs = simulate(P, n, lam, seed);
+    $("dsInfo").innerHTML = "Simulated " + P.story + ". n = <strong>" + n + "</strong>, λ = <strong>" + lam.toFixed(2) +
+      "</strong>, seed " + seed + ". Strength of the dependence in the population: Cramér’s V = <strong>" +
+      populationV(P, lam).toFixed(3) + "</strong>" + (lam === 0 ? " (X and Y independent by construction)" : "") + ".";
+  }
+  $("lamv").textContent = Number($("lam").value).toFixed(2);
+  rawPreview(recs, xName, yName);
+  A = analyse(xName, yName, recs, SIM ? PRESETS[SIM.key] : null);
+  renderTables(A); drawProfiles(); renderResult(A, ALPHA); renderScale(A); runMC();
+}
+function loadPreset() {
+  const P = PRESETS[$("ds").value];
+  if (P) { $("n").value = P.n; $("lam").value = P.lam; }
+  run();
+}
+
+$("csv").value = defaultCsv();
+$("ds").addEventListener("change", loadPreset);
+["n", "seed", "alpha"].forEach(id => $(id).addEventListener("change", run));
+$("lam").addEventListener("input", () => { $("lamv").textContent = Number($("lam").value).toFixed(2); });
+$("lam").addEventListener("change", run);
+$("resample").addEventListener("click", () => { $("seed").value = Math.round(clamp($("seed").value, 1, 2 ** 31, 2026)) + 1; run(); });
+$("useCsv").addEventListener("click", run);
+$("R").addEventListener("change", runMC);
+function drawAll() { drawProfiles(); drawMC(); }
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+loadPreset();
+})();
+</script>
+</body>
+</html>
