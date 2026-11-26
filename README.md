@@ -18,6 +18,7 @@ live in the browser.
 | 4 | Welford recurrence, continuous penetration scores, mean and variance of the average | [hw4](https://andreatadros.github.io/Statistics/hw4/) |
 | 5 | CDF of a normal density by numerical integration, Riemann vs Lebesgue integral | [hw5](https://andreatadros.github.io/Statistics/hw5/) |
 | 6 | Contingency tables, conditional and marginal frequencies, χ² test of independence, association vs causality | [hw6](https://andreatadros.github.io/Statistics/hw6/) |
+| 7 | Modes of convergence (a.s., in probability, L², in distribution), LLN and CLT, why √n, Bayes’ theorem, prior/likelihood/posterior | [hw7](https://andreatadros.github.io/Statistics/hw7/) |
 
 ## Repository structure
 

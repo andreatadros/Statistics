@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 7 - Statistics</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --muted: #5a5a72;
+    --accent: #7a1f2b;
+    --card: #f5f3f0;
+    --border: #d9d4cc;
+    --code-bg: #14141f;
+    --code-fg: #e8e8f0;
+    --band: rgba(122, 31, 43, 0.14);
+    --band2: rgba(31, 95, 122, 0.20);
+    --line2: #1f5f7a;
+    --good: #2e9e5b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+      --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+      --code-bg: #0c0c14; --code-fg: #e8e8f0;
+      --band: rgba(224, 138, 150, 0.18); --band2: rgba(108, 195, 224, 0.22);
+      --line2: #6cc3e0; --good: #5fd08e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14141f; --fg: #e8e8f0; --muted: #a0a0b8;
+    --accent: #e08a96; --card: #1e1e2e; --border: #2e2e44;
+    --code-bg: #0c0c14; --code-fg: #e8e8f0;
+    --band: rgba(224, 138, 150, 0.18); --band2: rgba(108, 195, 224, 0.22);
+    --line2: #6cc3e0; --good: #5fd08e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6; padding: 16px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { color: var(--accent); font-size: 1.7rem; margin-top: 0.4em; }
+  h2 { color: var(--accent); font-size: 1.3rem; margin-top: 1.8em;
+       border-bottom: 2px solid var(--border); padding-bottom: 0.2em; }
+  h3 { font-size: 1.05rem; margin-top: 1.4em; }
+  .muted { color: var(--muted); }
+  section { background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin: 18px 0; min-width: 0; }
+  pre { background: var(--code-bg); color: var(--code-fg); padding: 12px 14px;
+        border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg);
+             border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+             overflow-x: auto; white-space: nowrap; }
+  canvas { display: block; width: 100%; background: var(--bg);
+           border: 1px solid var(--border); border-radius: 8px; }
+  .traj { height: 280px; }
+  .small { height: 200px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 8px 0;
+          font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; }
+  th { background: var(--border); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 12px 16px; align-items: end; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;
+                    color: var(--muted); }
+  input, select { font: inherit; padding: 6px 8px; border-radius: 6px;
+                  border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+  input[type="range"] { padding: 0; accent-color: var(--accent); }
+  button { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 6px;
+           border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+           cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--line2); outline-offset: 2px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+           gap: 10px; }
+  .grid3 figure { margin: 0; min-width: 0; }
+  .grid3 figcaption { font-size: 0.8rem; color: var(--muted); text-align: center;
+                      font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem;
+            color: var(--muted); margin: 6px 0; }
+  .sw { display: inline-block; width: 16px; height: 4px; vertical-align: middle;
+        margin-right: 6px; border-radius: 2px; }
+  .swd { display: inline-block; width: 18px; height: 0; vertical-align: middle;
+         margin-right: 6px; border-top: 3px dashed; }
+  .readout { font-variant-numeric: tabular-nums; }
+  .ok { color: var(--good); font-weight: 600; }
+  .bad { color: var(--accent); font-weight: 600; }
+  [hidden] { display: none !important; }
+  a { color: var(--line2); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+           gap: 10px; margin: 12px 0; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+          padding: 8px 12px; }
+  .stat .k { font-size: 0.78rem; color: var(--muted); }
+  .stat .v { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .verdict { background: var(--bg); border-left: 4px solid var(--accent); border-radius: 6px;
+             padding: 10px 14px; margin: 12px 0; }
+  .warn { color: var(--accent); }
+  td.lab, th.lab { text-align: left; }
+  td.tot, th.tot { font-weight: 600; }
+  textarea { font: 0.82rem ui-monospace, "SF Mono", Menlo, monospace; width: 100%;
+             min-height: 150px; padding: 8px; border-radius: 6px; border: 1px solid var(--border);
+             background: var(--bg); color: var(--fg); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0; }
+  td.c { white-space: nowrap; }
+  .chk { flex-direction: row !important; align-items: center; gap: 6px !important; }
+</style>
+</head>
+<body>
+<main>
+<h1>Homework 7 — Modes of convergence, the √n law, and Bayesian inference</h1>
+<p class="muted">Statistics — the first half of the page compares the four main modes of
+convergence of probability theory and shows, by simulation, which of them appear in the Law of
+Large Numbers and in the Central Limit Theorem, and why the factor √n appears everywhere. The
+second half moves to conditional probability and Bayes’ theorem: how a prior and a likelihood
+combine into a posterior, how the posterior is updated as data arrive, and how much the prior
+influences the conclusions. Everything is computed live in your browser.</p>
+<p class="muted">Previous homework: <a href="../hw6/">Homework 6 — contingency tables and the
+χ² test of independence</a>.</p>
+
+<!-- ============================================================= -->
+<h2>The assignment</h2>
+<section>
+<p><strong>1. Modes of convergence.</strong> Explain the differences between the main modes of
+convergence used in probability theory — convergence in probability, almost sure convergence,
+mean-square (L²) convergence and convergence in distribution — and discuss their roles in the Law
+of Large Numbers, the Central Limit Theorem and other important results in statistics. Discuss
+why the term √n appears so often in convergence theorems, in relation to the additivity of the
+variance and the role of independence, in probability and in statistical inference.</p>
+<p><strong>2. Conditional probability and Bayes.</strong> Conditional probability in probability
+theory and in statistics, and Bayes’ theorem. Understand the role of, and the relationship
+between, the three components of Bayesian inference: prior, likelihood and posterior. Explain
+how Bayes’ theorem gives the posterior and why this updating process is central to Bayesian
+inference. Give examples of priors and likelihood functions, discussing applications, advantages,
+limitations and their influence on the conclusions.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 1 — The four modes of convergence</h2>
+<section>
+<p>Let X₁, X₂, … and X be random variables. “Xₙ → X” can mean very different things,
+because a random variable is a <em>function</em> ω ↦ X(ω) on a probability space (Ω, 𝓕, P),
+not a number. The four classical modes, from the strongest requirement on single outcomes to the
+weakest:</p>
+
+<h3>Almost sure convergence (with probability 1)</h3>
+<div class="formula">Xₙ → X a.s. &nbsp;⇔&nbsp; P( { ω : Xₙ(ω) → X(ω) } ) = 1
+<br>⇔&nbsp; for every ε &gt; 0: P( sup<sub>m≥n</sub> |Xₘ − X| &gt; ε ) → 0</div>
+<p>Pointwise convergence of the functions, except on a set of probability zero. It is a
+statement about <em>whole trajectories</em>: for almost every outcome the sequence of numbers
+Xₙ(ω) eventually enters any band around X(ω) and <em>never leaves it again</em>. It is the mode of
+the <strong>Strong LLN</strong> (Kolmogorov): if the Xᵢ are i.i.d. with E|X| &lt; ∞, then
+X̄ₙ → μ almost surely. It is also the mode of the Glivenko–Cantelli theorem (the empirical CDF
+converges to the true CDF uniformly, a.s.) and of the strong consistency of estimators.</p>
+
+<h3>Convergence in probability</h3>
+<div class="formula">Xₙ →ᴾ X &nbsp;⇔&nbsp; for every ε &gt; 0: P( |Xₙ − X| &gt; ε ) → 0</div>
+<p>For each <em>fixed</em> large n, a large deviation is unlikely, but nothing prevents
+a given trajectory from making rare excursions forever, at different times for different ω.
+It is the mode of the <strong>Weak LLN</strong> and of the definition of a
+<strong>consistent estimator</strong> (θ̂ₙ →ᴾ θ). Comparing the two formulas: a.s. controls the
+<em>sup over all m ≥ n</em>, in probability controls only the single index n.</p>
+
+<h3>Mean-square convergence (quadratic mean, L²)</h3>
+<div class="formula">Xₙ → X in L² &nbsp;⇔&nbsp; E[ (Xₙ − X)² ] → 0 &nbsp;&nbsp;(more generally Lᵖ: E|Xₙ − X|ᵖ → 0)</div>
+<p>The average squared distance goes to 0. For an estimator, E[(θ̂ₙ − θ)²] is the
+<strong>mean squared error</strong> = bias² + variance, so L² convergence is “MSE-consistency”.
+For the sample mean of uncorrelated variables with variance σ², E[(X̄ₙ − μ)²] = σ²/n → 0, and
+Chebyshev’s inequality turns this into the shortest proof of the Weak LLN:</p>
+<div class="formula">P( |X̄ₙ − μ| &gt; ε ) ≤ E[(X̄ₙ − μ)²] / ε² = σ² / (n ε²) → 0</div>
+<p>That is exactly the implication “L² ⇒ in probability” (Markov’s inequality). L² is the mode
+that needs <em>moments</em>: it says nothing when σ² = ∞.</p>
+
+<h3>Convergence in distribution (weak convergence, in law)</h3>
+<div class="formula">Xₙ →ᵈ X &nbsp;⇔&nbsp; Fₙ(x) → F(x) at every x where F is continuous<br>⇔&nbsp; E g(Xₙ) → E g(X) for every bounded continuous g</div>
+<p>Only the <em>laws</em> converge; the variables need not even live on the same probability
+space, and Xₙ and X can be far from each other for every ω. It is the mode of the
+<strong>Central Limit Theorem</strong>:</p>
+<div class="formula">Zₙ = √n (X̄ₙ − μ) / σ &nbsp;→ᵈ&nbsp; N(0, 1) &nbsp;&nbsp;i.e.&nbsp;
+P(Zₙ ≤ z) → Φ(z) for all z</div>
+<p>and of all asymptotic tests and confidence intervals (the χ² test of
+<a href="../hw6/">Homework 6</a> uses “X² →ᵈ χ²<sub>df</sub>”).</p>
+
+<h3>How they are related</h3>
+<svg viewBox="0 0 720 230" role="img" aria-label="Implications between modes of convergence"
+     style="width:100%;max-width:720px;display:block;margin:6px auto;color:var(--fg)">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+    orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g font-size="14" font-family="system-ui, sans-serif" text-anchor="middle" fill="currentColor">
+    <rect x="20" y="20" width="160" height="44" rx="8" fill="none" stroke="currentColor"/>
+    <text x="100" y="47">almost sure</text>
+    <rect x="20" y="160" width="160" height="44" rx="8" fill="none" stroke="currentColor"/>
+    <text x="100" y="187">L² (⇒ L¹)</text>
+    <rect x="280" y="90" width="160" height="44" rx="8" fill="none" stroke="currentColor"/>
+    <text x="360" y="117">in probability</text>
+    <rect x="540" y="90" width="160" height="44" rx="8" fill="none" stroke="currentColor"/>
+    <text x="620" y="117">in distribution</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+    <path d="M180,48 L278,102"/>
+    <path d="M180,176 L278,122"/>
+    <path d="M440,112 L538,112"/>
+  </g>
+  <g stroke="currentColor" stroke-width="1.2" fill="none" stroke-dasharray="5 4" marker-end="url(#ar)" opacity="0.7">
+    <path d="M540,134 C500,175 420,170 400,138"/>
+    <path d="M300,90 C260,40 230,30 184,34"/>
+    <path d="M300,134 C270,190 240,200 184,192"/>
+  </g>
+  <g font-size="11.5" font-family="system-ui, sans-serif" fill="currentColor" opacity="0.85">
+    <text x="196" y="132" text-anchor="end">Markov / Chebyshev</text>
+    <text x="489" y="104" text-anchor="middle">always</text>
+    <text x="470" y="190" text-anchor="middle">only if the limit is a constant</text>
+    <text x="250" y="22" text-anchor="middle">along a subsequence</text>
+    <text x="250" y="222" text-anchor="middle">+ uniform integrability / domination</text>
+  </g>
+</svg>
+<p class="muted">Solid arrows always hold; dashed arrows are partial converses that need an extra
+condition. There is no implication in either direction between a.s. and L².</p>
+
+<p>Each missing arrow has a counterexample. On Ω = [0, 1] with the uniform probability
+(ω = a uniform random number):</p>
+<div class="tablewrap"><table>
+<tr><th class="lab">sequence</th><th>a.s.</th><th>in probability</th><th>L²</th><th>in distribution</th><th class="lab">why</th></tr>
+<tr><td class="lab"><strong>typewriter</strong>: Xₙ = 1 on an interval of length 1/k that sweeps [0, 1] (block k has k intervals)</td>
+<td class="bad c">no</td><td class="ok c">→ 0</td><td class="ok c">→ 0</td><td class="ok c">→ 0</td>
+<td class="lab">P(Xₙ = 1) = 1/k → 0 and E Xₙ² = 1/k → 0, but every ω is hit once in every block: Xₙ(ω) = 1 infinitely often</td></tr>
+<tr><td class="lab"><strong>spike</strong>: Yₙ = n · 1{ω &lt; 1/n}</td>
+<td class="ok c">→ 0</td><td class="ok c">→ 0</td><td class="bad c">no</td><td class="ok c">→ 0</td>
+<td class="lab">for every ω &gt; 0, Yₙ(ω) = 0 as soon as n &gt; 1/ω; but E Yₙ² = n² · (1/n) = n → ∞</td></tr>
+<tr><td class="lab"><strong>mirror</strong>: X ~ N(0, 1), Wₙ = −X</td>
+<td class="bad c">no</td><td class="bad c">no</td><td class="bad c">no</td><td class="ok c">→ X</td>
+<td class="lab">Wₙ has exactly the law of X, yet |Wₙ − X| = 2|X| never shrinks</td></tr>
+<tr><td class="lab"><strong>sample mean</strong> of i.i.d. data with finite σ²</td>
+<td class="ok c">→ μ</td><td class="ok c">→ μ</td><td class="ok c">→ μ</td><td class="ok c">→ μ</td>
+<td class="lab">all four (SLLN, WLLN, σ²/n → 0); the CLT then describes the √n-magnified error</td></tr>
+</table></div>
+
+<p>The typewriter is the clearest picture of “in probability but not a.s.”. Below, the value
+Xₙ(ω) for one fixed outcome ω: a spike every time the sweeping interval passes over ω. The
+spikes become rarer (once per block) but never stop, while the probability of a spike, the
+dashed line, goes to 0.</p>
+<div class="controls">
+<label>outcome ω ∈ [0, 1] <input type="number" id="tw_w" value="0.37" min="0" max="1" step="0.01"></label>
+<label>show n up to <select id="tw_n"><option>200</option><option selected>1000</option><option>5000</option></select></label>
+</div>
+<canvas id="cTw" class="small" style="margin-top:10px"></canvas>
+<p class="readout muted" id="twInfo"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 2 — The modes at work: LLN and CLT by simulation</h2>
+<section>
+<p>We simulate many independent trajectories of the running mean X̄ₙ = (X₁ + … + Xₙ)/n and measure
+each mode directly. The last two distributions are there on purpose: they break the hypotheses
+of the theorems.</p>
+<div class="controls">
+<label>distribution of Xᵢ <select id="dist">
+  <option value="bern">Bernoulli(0.3)</option>
+  <option value="unif">Uniform(0, 1)</option>
+  <option value="exp" selected>Exponential(1) — skewed</option>
+  <option value="pareto">Pareto(α = 1.5) — σ² = ∞</option>
+  <option value="cauchy">Cauchy — no mean</option>
+</select></label>
+<label>n up to <select id="nmax"><option>1000</option><option selected>5000</option><option>20000</option></select></label>
+<label>trajectories R <select id="R"><option>200</option><option selected>500</option><option>1000</option></select></label>
+<label>tolerance ε <input type="number" id="eps" value="0.1" min="0.001" step="0.01"></label>
+<label>seed <input type="number" id="seed" value="2026" min="1" step="1"></label>
+<label>&nbsp;<button id="resample">New sample</button></label>
+</div>
+<p class="readout" id="distInfo"></p>
+
+<h3>(a) Trajectories of X̄ₙ — the strong law</h3>
+<canvas id="cPaths" class="traj"></canvas>
+<p class="legend"><span><span class="sw" style="background:var(--band)"></span>band μ ± ε</span>
+<span>first 20 trajectories, n on a log scale</span></p>
+
+<h3>(b) Almost surely vs in probability</h3>
+<p>Two different probabilities, estimated over the R trajectories:</p>
+<ul>
+<li><span style="color:var(--line2);font-weight:600">P( |X̄ₙ − μ| &gt; ε )</span> — the trajectory is
+outside the band <em>at time n</em> (weak law, convergence in probability);</li>
+<li><span style="color:var(--accent);font-weight:600">P( sup<sub>m≥n</sub> |X̄ₘ − μ| &gt; ε )</span> —
+the trajectory is outside the band <em>at some time after n</em> (strong law, a.s.; the sup is over
+the simulated horizon m ≤ n<sub>max</sub>).</li>
+</ul>
+<canvas id="cProb" class="small"></canvas>
+<p class="readout" id="probInfo"></p>
+
+<h3>(c) Mean-square convergence: E[(X̄ₙ − μ)²] against σ²/n</h3>
+<canvas id="cMse" class="small"></canvas>
+<p class="legend"><span><span class="sw" style="background:var(--accent)"></span>simulated MSE</span>
+<span><span class="swd" style="border-color:var(--line2)"></span>σ²/n</span> <span>(log–log scale)</span></p>
+
+<h3>(d) Convergence in distribution: the CLT</h3>
+<p>For a fixed n we draw many independent samples and histogram the standardized error
+Zₙ = √n (X̄ₙ − μ)/σ. The CLT says the histogram approaches the N(0, 1) density, whatever the
+distribution of the Xᵢ, as long as σ² &lt; ∞.</p>
+<div class="controls">
+<label>sample size n <select id="cltN"><option>1</option><option>2</option><option selected>5</option><option>10</option><option>30</option><option>100</option><option>1000</option></select></label>
+<label>samples <select id="cltR"><option>2000</option><option selected>5000</option><option>20000</option></select></label>
+</div>
+<canvas id="cClt" class="traj" style="margin-top:10px"></canvas>
+<p class="readout" id="cltInfo"></p>
+<div class="tablewrap"><table id="tClt"></table></div>
+<p class="muted">The Kolmogorov distance sup |Fₙ(z) − Φ(z)| between the empirical CDF of Zₙ and Φ
+is exactly the quantity that convergence in distribution sends to 0. The Berry–Esseen theorem
+bounds it by 0.48 · E|X − μ|³ / (σ³ √n): the CLT error itself decreases like 1/√n, faster for
+symmetric distributions (try Uniform) than for skewed ones (Exponential). With Bernoulli data the
+distance cannot go below the size of the lattice jumps, also of order 1/√n.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 3 — Why √n: additivity of the variance and independence</h2>
+<section>
+<p>Everything follows from one identity. For any random variables with finite variance,</p>
+<div class="formula">Var( X₁ + … + Xₙ ) = Σᵢ Var(Xᵢ) + 2 Σ<sub>i&lt;j</sub> Cov(Xᵢ, Xⱼ)</div>
+<p>If the Xᵢ are <strong>independent</strong> (in fact uncorrelated is enough for this formula) all
+covariances vanish and <strong>variances add</strong>: Var(Sₙ) = nσ². Standard deviations do
+not add — they add <em>in quadrature</em>:</p>
+<div class="formula">sd(Sₙ) = σ √n &nbsp;&nbsp;⇒&nbsp;&nbsp; sd(X̄ₙ) = σ / √n &nbsp;&nbsp;(the standard error)</div>
+<p>Independent errors partially cancel: n steps of a random walk travel about √n, not n. This
+fixes the only scaling that gives a non-trivial limit. Dividing Sₙ − nμ by nᵃ:</p>
+<ul>
+<li>a = 1 (the sample mean): the spread σ n<sup>½−1</sup> → 0 — a <em>degenerate</em> limit, the
+LLN (convergence in probability / a.s. to the constant μ);</li>
+<li>a = ½: the spread is exactly σ for every n — a non-degenerate limit, the CLT (convergence in
+distribution to N(0, σ²));</li>
+<li>a &lt; ½: the spread σ n<sup>½−a</sup> → ∞ — no limit.</li>
+</ul>
+<p>The plot uses the trajectories of Part 2 (change the distribution there). The spread is
+measured robustly (interquartile range / 1.349, equal to σ for a normal), so it exists even when
+σ² = ∞.</p>
+<canvas id="cScale" class="small"></canvas>
+<p class="legend">
+<span><span class="sw" style="background:#2e9e5b"></span>(Sₙ − nμ) — no scaling</span>
+<span><span class="sw" style="background:var(--line2)"></span>(Sₙ − nμ)/√n</span>
+<span><span class="sw" style="background:var(--accent)"></span>(Sₙ − nμ)/n = X̄ₙ − μ</span>
+<span>(log–log)</span></p>
+<p class="readout" id="scaleInfo"></p>
+<p>With heavy tails √n is no longer the right scale: for Pareto(α) with 1 &lt; α &lt; 2 the sum
+spreads like n<sup>1/α</sup> (slope 0.67 for α = 1.5), the LLN still holds but the CLT does not, and the
+limit is a non-normal stable law. For the Cauchy the spread of the sum grows like n (slope 1):
+X̄ₙ has the same Cauchy distribution as a single observation, and averaging gains nothing.</p>
+
+<h3>When independence fails</h3>
+<p>At the opposite extreme, if all Xᵢ are the same variable, Var(Sₙ) = n²σ² and X̄ₙ = X₁ does not
+converge at all. Real data are in between. Take a stationary AR(1) process
+Xₜ = ρ Xₜ₋₁ + √(1−ρ²) εₜ (variance 1, correlation ρᵏ at lag k), a simple model for bursty
+data such as network traffic or log events. The covariances no longer vanish and</p>
+<div class="formula">Var(X̄ₙ) = (1/n) [ 1 + 2 Σ<sub>k=1</sub><sup>n−1</sup> (1 − k/n) ρᵏ ]
+&nbsp;≈&nbsp; (1/n) · (1 + ρ)/(1 − ρ)<br>⇒&nbsp;&nbsp; n<sub>eff</sub> = n (1 − ρ)/(1 + ρ)</div>
+<p>The rate is still 1/√n, but the constant changes: n correlated observations are worth only
+n<sub>eff</sub> independent ones. A confidence interval that assumes independence
+(X̄ ± 1.96/√n) is then too narrow and its real coverage falls below 95%.</p>
+<div class="controls">
+<label>correlation ρ = <span id="rhov">0.50</span>
+  <input type="range" id="rho" min="-0.9" max="0.95" step="0.05" value="0.5"></label>
+<label>n up to <select id="arN"><option>200</option><option selected>1000</option><option>4000</option></select></label>
+<label>replications <select id="arR"><option>500</option><option selected>2000</option></select></label>
+</div>
+<canvas id="cAr" class="small" style="margin-top:10px"></canvas>
+<p class="legend">
+<span><span class="sw" style="background:var(--accent)"></span>simulated sd(X̄ₙ)</span>
+<span><span class="sw" style="background:var(--line2)"></span>exact formula above</span>
+<span><span class="swd" style="border-color:var(--muted)"></span>1/√n (independence)</span></p>
+<div class="stats" id="arStats"></div>
+
+<h3>√n in statistical inference</h3>
+<ul>
+<li><strong>Standard errors and intervals.</strong> SE(X̄) = σ/√n, estimated by S/√n; the interval
+X̄ ± z S/√n is justified by the CLT plus Slutsky’s theorem (S →ᴾ σ, so replacing σ by S does not
+change the limit in distribution).</li>
+<li><strong>Sample size.</strong> Precision grows only like √n: halving the width of an interval
+costs four times the data; the n needed for a margin E is (zσ/E)².</li>
+<li><strong>Estimators.</strong> “√n-consistency” is the standard: under regularity,
+√n(θ̂<sub>MLE</sub> − θ) →ᵈ N(0, I(θ)⁻¹), and the delta method gives
+√n(g(θ̂) − g(θ)) →ᵈ N(0, g′(θ)² I(θ)⁻¹).</li>
+<li><strong>Tests.</strong> Test statistics have the form √n(θ̂ₙ − θ₀)/s: for a fixed true effect
+they grow like √n, so with enough data any effect, however small, becomes “significant” (the
+same reason χ² grows with n in Homework 6).</li>
+<li><strong>Monte Carlo.</strong> The error of a simulation estimate decreases like 1/√R, which is
+why the curves of Part 2 get smoother only slowly as R grows.</li>
+<li><strong>Beyond the CLT.</strong> The law of the iterated logarithm says the trajectories of
+Sₙ − nμ reach ±σ√(2n log log n) infinitely often: just a bit more than √n.</li>
+</ul>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 4 — Conditional probability and Bayes’ theorem</h2>
+<section>
+<p>For events A, B with P(B) &gt; 0, the probability of A <em>given</em> B is</p>
+<div class="formula">P(A | B) = P(A ∩ B) / P(B)</div>
+<p>Conditioning on B means: restrict the sample space to B and renormalize. The conditional
+frequencies of a contingency table (nᵢⱼ / n.ⱼ in Homework 6) are its empirical counterpart. From
+the definition come the multiplication rule P(A ∩ B) = P(A | B) P(B), the law of total
+probability for a partition H₁, …, Hₖ, and <strong>Bayes’ theorem</strong>, which reverses the
+direction of the conditioning:</p>
+<div class="formula">P(Hⱼ | E) = P(E | Hⱼ) P(Hⱼ) / Σₖ P(E | Hₖ) P(Hₖ)<br>odds form: &nbsp; P(H|E)/P(Hᶜ|E) = [ P(E|H)/P(E|Hᶜ) ] × P(H)/P(Hᶜ)</div>
+<p>Posterior odds = likelihood ratio × prior odds. In statistics the two directions have
+different roles: classical (frequentist) inference works with P(data | hypothesis) — sampling
+distributions, p-values — while Bayesian inference computes P(hypothesis | data). Confusing the
+two (reading a p-value as the probability that H₀ is true) is the <em>prosecutor’s fallacy</em>.</p>
+
+<h3>Example: how much should we trust an alarm?</h3>
+<p>An intrusion detection system flags malicious connections. It detects an attack with
+probability P(alarm | attack) = sensitivity and raises a false alarm on benign traffic with
+probability P(alarm | benign) = false-positive rate. The prior is the base rate: the fraction
+of connections that are attacks.</p>
+<div class="controls">
+<label>base rate P(attack) = <span id="baseV"></span>
+  <input type="range" id="base" min="-5" max="-0.3" step="0.05" value="-3"></label>
+<label>sensitivity = <span id="sensV"></span>
+  <input type="range" id="sens" min="0.5" max="0.999" step="0.001" value="0.99"></label>
+<label>false-positive rate = <span id="fprV"></span>
+  <input type="range" id="fpr" min="0.0001" max="0.2" step="0.0001" value="0.01"></label>
+</div>
+<div class="stats" id="idsStats"></div>
+<div class="tablewrap"><table id="tIds"></table></div>
+<canvas id="cIds" class="small"></canvas>
+<p class="legend">
+<span><span class="sw" style="background:var(--accent)"></span>after 1 alarm</span>
+<span><span class="sw" style="background:var(--line2)"></span>after 2 independent alarms</span>
+<span><span class="sw" style="background:#2e9e5b"></span>after 3</span>
+<span><span class="swd" style="border-color:var(--muted)"></span>posterior = prior</span></p>
+<p class="verdict" id="idsVerdict"></p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 5 — Prior, likelihood, posterior: Bayesian inference on a parameter</h2>
+<section>
+<p>Bayesian inference applies Bayes’ theorem to an unknown parameter θ, treated as a random
+variable. The three components:</p>
+<ul>
+<li><strong>Prior</strong> π(θ): what is believed about θ before seeing the data — results of
+previous studies, expert knowledge, physical constraints, or a deliberately vague default.</li>
+<li><strong>Likelihood</strong> L(θ; x) = f(x | θ): the probability of the observed data as a
+function of θ. It is <em>not</em> a density in θ (it need not integrate to 1); it carries all the
+information the data give about θ, and it is the same function maximized by the MLE.</li>
+<li><strong>Posterior</strong> π(θ | x): the updated belief,</li>
+</ul>
+<div class="formula">π(θ | x) = f(x | θ) π(θ) / m(x), &nbsp;&nbsp; m(x) = ∫ f(x | θ) π(θ) dθ<br>i.e. &nbsp; posterior ∝ likelihood × prior</div>
+<p>The evidence m(x) is just the normalizing constant (it matters for comparing models, through
+Bayes factors). The posterior is the whole answer: point estimates (posterior mean, median, mode),
+credible intervals, probabilities of hypotheses and predictions all come from it.</p>
+
+<h3>Updating</h3>
+<p>With independent observations, the posterior after n − 1 data points is the prior for the n-th:
+π(θ | x₁…xₙ) ∝ f(xₙ | θ) · π(θ | x₁…xₙ₋₁). Updating one point at a time, in any order, or all at
+once gives the same result. Learning is cumulative: yesterday’s posterior is today’s prior. This is
+why Bayes’ theorem is the core of Bayesian inference: it is the single rule that turns
+information into belief.</p>
+
+<h3>Example: the click rate of a phishing campaign (Beta–Binomial)</h3>
+<p>A company runs a simulated phishing campaign; p is the probability that an employee clicks.
+Each employee is a Bernoulli(p) trial, so with k clicks out of n the likelihood is
+L(p) ∝ pᵏ (1 − p)ⁿ⁻ᵏ. With a Beta(a, b) prior the posterior is again a Beta (a <em>conjugate</em>
+prior):</p>
+<div class="formula">p ~ Beta(a, b), &nbsp; k | p ~ Bin(n, p) &nbsp;⇒&nbsp; p | k ~ Beta(a + k, b + n − k)</div>
+<div class="formula">E[p | k] = (a + k)/(a + b + n) = w · a/(a+b) + (1 − w) · k/n, &nbsp;&nbsp; w = (a + b)/(a + b + n)</div>
+<p>The posterior mean is a weighted average of the prior mean and the MLE k/n; the prior counts as
+a + b “pseudo-observations” (a clicks and b non-clicks seen before).</p>
+<div class="controls">
+<label>prior <select id="prior">
+  <option value="flat">Uniform — Beta(1, 1)</option>
+  <option value="jeff">Jeffreys — Beta(½, ½)</option>
+  <option value="last" selected>Last year’s campaign — Beta(4, 16)</option>
+  <option value="wrong">Overconfident and wrong — Beta(90, 10)</option>
+  <option value="custom">custom Beta(a, b)</option>
+</select></label>
+<label>a <input type="number" id="pa" value="4" min="0.01" step="0.5"></label>
+<label>b <input type="number" id="pb" value="16" min="0.01" step="0.5"></label>
+<label>true p (unknown in practice) <input type="number" id="ptrue" value="0.12" min="0" max="1" step="0.01"></label>
+<label>employees n <input type="number" id="bn" value="20" min="0" max="2000" step="1"></label>
+<label>seed <input type="number" id="bseed" value="7" min="1" step="1"></label>
+<label>threshold p₀ <input type="number" id="thr" value="0.15" min="0.01" max="0.99" step="0.01"></label>
+<label>&nbsp;<button id="add10">+10 employees</button></label>
+</div>
+<p class="readout" id="bayesData"></p>
+<canvas id="cPost" class="traj"></canvas>
+<p class="legend">
+<span><span class="swd" style="border-color:#2e9e5b"></span>prior π(p)</span>
+<span><span class="sw" style="background:var(--line2)"></span>likelihood (rescaled to area 1)</span>
+<span><span class="sw" style="background:var(--accent)"></span>posterior π(p | data)</span>
+<span><span class="swd" style="border-color:var(--muted)"></span>true p</span></p>
+<div class="stats" id="bayesStats"></div>
+
+<h3>Sensitivity to the prior</h3>
+<p>The same data analysed under the four priors. With few employees the conclusions depend
+heavily on the prior; with many they agree.</p>
+<div class="tablewrap"><table id="tSens"></table></div>
+
+<h3>Sequential learning: the prior is washed out</h3>
+<p>The same stream of employees, analysed after each new batch: posterior mean and 95% credible
+band for the chosen prior and for the uniform prior, against the number of employees.</p>
+<canvas id="cSeq" class="traj"></canvas>
+<p class="legend">
+<span><span class="sw" style="background:var(--band)"></span><span class="sw" style="background:var(--accent)"></span>chosen prior</span>
+<span><span class="sw" style="background:var(--band2)"></span><span class="sw" style="background:var(--line2)"></span>uniform prior</span>
+<span><span class="swd" style="border-color:var(--muted)"></span>true p</span>
+<span>(n on a log scale)</span></p>
+<p class="muted">The width of the bands shrinks like 1/√n: the posterior sd of p is
+√(p(1−p)/n) for large n, the same as the frequentist standard error. This is the Bernstein–von
+Mises theorem — for large n the posterior is approximately N(θ̂<sub>MLE</sub>, I(θ)⁻¹/n),
+whatever the (smooth, positive) prior — and it brings us back to Part 3.</p>
+</section>
+
+<!-- ============================================================= -->
+<h2>Part 6 — More examples, advantages and limitations</h2>
+<section>
+<h3>Normal data with a normal prior</h3>
+<p>If X₁…Xₙ | θ ~ N(θ, σ²) with σ known and θ ~ N(μ₀, τ₀²), then θ | x ~ N(μₙ, τₙ²) with</p>
+<div class="formula">1/τₙ² = 1/τ₀² + n/σ², &nbsp;&nbsp; μₙ = τₙ² ( μ₀/τ₀² + n x̄/σ² )</div>
+<p>Precisions (inverse variances) add, exactly like the variances of independent variables in
+Part 3; the posterior mean is the precision-weighted average of the prior mean and x̄, and for
+large n, τₙ ≈ σ/√n.</p>
+
+<h3>Other uses of priors and likelihoods</h3>
+<ul>
+<li><strong>Diagnostic tests and alarms</strong> (Part 4): the prior is the base rate; ignoring it
+(the base-rate fallacy) makes a 99% accurate test look far more conclusive than it is.</li>
+<li><strong>Spam filtering (naive Bayes).</strong> P(spam | words) ∝ P(spam) · Πᵢ P(wordᵢ | spam):
+the prior is the share of spam, the likelihood comes from word frequencies in labelled mail, and
+the filter updates as users mark messages.</li>
+<li><strong>Rare events with zero counts.</strong> 0 incidents in n audits gives MLE p̂ = 0, an
+unrealistic “impossible”; the posterior Beta(1, n + 1) gives mean 1/(n + 2) and a sensible upper
+bound (about 3/n, like the “rule of three”).</li>
+<li><strong>A/B testing</strong> of two versions of a page or a warning message: the quantity of
+interest is directly P(p<sub>B</sub> &gt; p<sub>A</sub> | data).</li>
+<li><strong>Forensic evidence</strong>: experts are asked to report a likelihood ratio, leaving
+the prior odds to the court.</li>
+<li><strong>Hierarchical models</strong>: many related groups (departments, servers) share a
+common prior estimated from the data, so small groups borrow strength from large ones.</li>
+</ul>
+
+<h3>Advantages</h3>
+<ul>
+<li>Uses information available before the data, explicitly and transparently.</li>
+<li>Direct probability statements: “P(p &gt; 0.15 | data) = 0.3” or “p is in [a, b] with probability
+95%”, which is what people usually think a confidence interval means.</li>
+<li>Natural sequential updating, no need to fix n in advance.</li>
+<li>Works with small samples and zero counts; the posterior expected loss gives a coherent rule
+for decisions.</li>
+</ul>
+
+<h3>Limitations</h3>
+<ul>
+<li>The prior is a choice, and with little data it drives the result (the sensitivity table
+above). Conclusions should be reported with a sensitivity analysis.</li>
+<li>A confident wrong prior needs a lot of data to be corrected (the Beta(90, 10) prior); a prior
+that gives probability 0 to a value can never be revived by any data (Cromwell’s rule).</li>
+<li>“Non-informative” priors are not unique: uniform on p is not uniform on the log-odds;
+Jeffreys’ prior is one principled answer. Improper priors can give improper posteriors.</li>
+<li>The evidence integral is rarely available in closed form: outside conjugate models we need
+numerical methods (MCMC, variational approximations).</li>
+<li>The likelihood is a model too: if it is wrong (e.g. assuming independence for correlated
+data, Part 3), the posterior is confidently wrong, exactly as a frequentist interval would be.</li>
+</ul>
+</section>
+
+<!-- ============================================================= -->
+<h2>Core of the computation</h2>
+<section>
+<pre><code>// Part 2: one trajectory of the running mean, with what each mode needs
+let s = 0, last = 0;                     // last = last n at which |mean − μ| &gt; ε
+for (let n = 1; n &lt;= nmax; n++) {
+  s += draw(rnd);  const dev = s / n - mu;
+  if (Math.abs(dev) &gt; eps) last = n;
+  if (n === grid[g]) dev_[r][g++] = dev;  // stored at log-spaced n
+}
+// in probability : P(|X̄ₙ − μ| &gt; ε)        = mean over r of  |dev_[r][g]| &gt; ε
+// almost surely  : P(sup_{m≥n} |X̄ₘ − μ| &gt; ε) = mean over r of  last ≥ grid[g]
+// L²             : E[(X̄ₙ − μ)²]           = mean over r of  dev_[r][g]²
+// distribution   : Zₙ = √n · dev / σ  →  histogram and sup|Fₙ − Φ|
+
+// Part 4: Bayes in odds form, k conditionally independent alarms
+const post = k =&gt; { const o = prior / (1 - prior) * (sens / fpr) ** k; return o / (1 + o); };
+
+// Part 5: Beta–Binomial posterior on a grid (to get the credible interval)
+const A = a + k, B = b + n - k;
+const logd = x =&gt; (A - 1) * Math.log(x) + (B - 1) * Math.log(1 - x);
+// evaluate on G midpoints, normalize, cumulate → quantiles 0.025 and 0.975</code></pre>
+<p class="muted">Simulations use a seeded generator (mulberry32) and the Box–Muller transform for
+normal noise; Φ uses an erfc approximation with error below 10⁻⁷.</p>
+</section>
+
+<h2>Conclusions</h2>
+<section>
+<ul>
+<li>The four modes ask different things: a.s. is about whole trajectories, in probability about
+one fixed n, L² about the average squared error, in distribution only about the laws. a.s. and L²
+each imply convergence in probability, which implies convergence in distribution; the
+counterexamples show that none of these arrows can be reversed in general.</li>
+<li>The LLN says <em>where</em> X̄ₙ goes (μ, in probability or a.s.); the CLT says <em>how</em> it
+fluctuates around μ (normal, of size σ/√n, in distribution). Part 2(b) shows the difference
+between weak and strong law: the probability of being outside the band now, and of ever being
+outside it again, both go to 0, but they are different curves.</li>
+<li>√n comes from the additivity of variance for independent (uncorrelated) terms: sd(Sₙ) = σ√n.
+It is the only normalization with a non-degenerate limit, it fixes the rate of standard errors,
+intervals, tests and Monte Carlo, and it changes when its hypotheses fail: n<sup>1/α</sup> with
+heavy tails, a different constant (n<sub>eff</sub>) with dependence.</li>
+<li>Bayes’ theorem turns P(data | θ) into P(θ | data): posterior ∝ likelihood × prior. With rare
+events the prior (base rate) dominates the conclusion of a single alarm; repeated independent
+evidence multiplies the odds by the likelihood ratio each time.</li>
+<li>In the Beta–Binomial model the posterior mean is a compromise between the prior mean and the
+MLE with weight (a + b)/(a + b + n); with little data the prior matters a lot, with much data
+all reasonable priors agree and the posterior concentrates at the rate 1/√n.</li>
+</ul>
+</section>
+</main>
+
+<script>
+(function () {
+"use strict";
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ---------- seeded random generator, normal noise ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(r) {
+  let u = r(); while (u === 0) u = r();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r());
+}
+function erfc(x) {                        // Numerical Recipes, |error| < 1.2e-7
+  const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+  const r = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 +
+    t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 +
+    t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? r : 2 - r;
+}
+const Phi = z => 0.5 * erfc(-z / Math.SQRT2);
+const npdf = z => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+function lgamma(z) {
+  if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lgamma(1 - z);
+  z -= 1;
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  let x = c[0]; for (let i = 1; i < 9; i++) x += c[i] / (z + i);
+  const t = z + 7.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+/* ---------- drawing helpers ---------- */
+function setup(c) {
+  const r = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.round(w * r); c.height = Math.round(h * r);
+  const x = c.getContext("2d"); x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  return { x, w, h };
+}
+function niceTicks(lo, hi, count) {
+  const span = hi - lo; if (span <= 0) return [lo];
+  const raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const sup = s => String(s).replace(/[-\d]/g, d => d === "-" ? "⁻" : "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+const fmt = v => {
+  const a = Math.abs(v);
+  if (!Number.isFinite(v)) return v > 0 ? "∞" : "—";
+  if (a === 0) return "0";
+  if (a >= 1e5 || a < 1e-3) { const e = Math.floor(Math.log10(a)); return (v / Math.pow(10, e)).toFixed(2) + "·10" + sup(e); }
+  if (a >= 100 || Number.isInteger(v)) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  if (a >= 1) return v.toFixed(2).replace(/\.?0+$/, "");
+  return v.toFixed(3).replace(/\.?0+$/, "");
+};
+const pct = p => p > 0.999 && p < 1 ? "&gt; 99.9%" : (100 * p).toFixed(p < 0.001 ? 3 : p < 0.1 ? 2 : 1) + "%";
+function clamp(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
+function logTicks(lo, hi) {
+  const out = [], e0 = Math.floor(Math.log10(lo)), e1 = Math.ceil(Math.log10(hi));
+  const mult = e1 - e0 <= 2 ? [1, 2, 5] : [1];
+  for (let e = e0; e <= e1; e++) for (const m of mult) { const v = m * Math.pow(10, e); if (v >= lo * 0.999 && v <= hi * 1.001) out.push(v); }
+  return out;
+}
+const tickLab = v => {
+  const a = Math.abs(v);
+  if (a !== 0 && (a >= 1e4 || a < 1e-2)) { const e = Math.round(Math.log10(a)); if (Math.abs(a / Math.pow(10, e) - 1) < 1e-9) return "10" + sup(e); }
+  return fmt(v);
+};
+/* frame: axes, grid, ticks; returns mapping functions */
+function frame(c, o) {
+  const { x, w, h } = setup(c);
+  const b = { L: o.L || 56, R: 12, T: 10, B: 28 }; b.pw = w - b.L - b.R; b.ph = h - b.T - b.B;
+  const tx = o.xlog ? Math.log10 : v => v, ty = o.ylog ? Math.log10 : v => v;
+  const X = v => b.L + (tx(v) - tx(o.x0)) / (tx(o.x1) - tx(o.x0)) * b.pw;
+  const Y = v => b.T + b.ph - (ty(v) - ty(o.y0)) / (ty(o.y1) - ty(o.y0)) * b.ph;
+  x.font = "11px system-ui, sans-serif"; x.lineWidth = 1;
+  const xt = o.xlog ? logTicks(o.x0, o.x1) : niceTicks(o.x0, o.x1, Math.max(3, Math.floor(b.pw / 80)));
+  const yt = o.ylog ? logTicks(o.y0, o.y1) : niceTicks(o.y0, o.y1, Math.max(3, Math.floor(b.ph / 40)));
+  x.strokeStyle = css("--border"); x.fillStyle = css("--muted");
+  x.textAlign = "center"; x.textBaseline = "top";
+  xt.forEach(v => { const px = X(v); x.beginPath(); x.moveTo(px, b.T); x.lineTo(px, b.T + b.ph); x.stroke();
+    x.fillText(o.xfmt ? o.xfmt(v) : tickLab(v), px, b.T + b.ph + 4); });
+  x.textAlign = "right"; x.textBaseline = "middle";
+  yt.forEach(v => { const py = Y(v); x.beginPath(); x.moveTo(b.L, py); x.lineTo(b.L + b.pw, py); x.stroke();
+    x.fillText(o.yfmt ? o.yfmt(v) : tickLab(v), b.L - 5, py); });
+  x.strokeStyle = css("--muted"); x.strokeRect(b.L, b.T, b.pw, b.ph);
+  if (o.xlabel) { x.textAlign = "right"; x.textBaseline = "bottom"; x.fillText(o.xlabel, b.L + b.pw - 4, b.T + b.ph - 3); }
+  if (o.ylabel) { x.textAlign = "left"; x.textBaseline = "top"; x.fillText(o.ylabel, b.L + 5, b.T + 3); }
+  x.textBaseline = "alphabetic";
+  const clip = () => { x.save(); x.beginPath(); x.rect(b.L, b.T, b.pw, b.ph); x.clip(); };
+  return { x, b, X, Y, clip };
+}
+function line(F, pts, color, width, dash) {
+  const x = F.x; F.clip();
+  x.strokeStyle = color; x.lineWidth = width || 1.6; x.setLineDash(dash || []);
+  x.beginPath(); let on = false;
+  for (const [u, v] of pts) {
+    if (!Number.isFinite(u) || !Number.isFinite(v)) { on = false; continue; }
+    const px = F.X(u), py = Math.max(-1e4, Math.min(1e4, F.Y(v)));
+    on ? x.lineTo(px, py) : x.moveTo(px, py); on = true;
+  }
+  x.stroke(); x.setLineDash([]); x.restore();
+}
+function band(F, lo, hi, color) {   // lo, hi: arrays of [u, v]
+  const x = F.x; F.clip(); x.fillStyle = color; x.beginPath();
+  lo.forEach(([u, v], i) => i ? x.lineTo(F.X(u), F.Y(v)) : x.moveTo(F.X(u), F.Y(v)));
+  for (let i = hi.length - 1; i >= 0; i--) x.lineTo(F.X(hi[i][0]), F.Y(hi[i][1]));
+  x.closePath(); x.fill(); x.restore();
+}
+function logGrid(n1, n2, k) {
+  const out = [];
+  for (let i = 0; i < k; i++) { const v = Math.round(Math.exp(Math.log(n1) + (Math.log(n2) - Math.log(n1)) * i / (k - 1)));
+    if (!out.length || v > out[out.length - 1]) out.push(v); }
+  return out;
+}
+function quantile(sorted, q) {
+  const p = (sorted.length - 1) * q, i = Math.floor(p), f = p - i;
+  return i + 1 < sorted.length ? sorted[i] * (1 - f) + sorted[i + 1] * f : sorted[i];
+}
+const stat = (k, v) => "<div class='stat'><div class='k'>" + k + "</div><div class='v'>" + v + "</div></div>";
+
+/* =================================================================
+   Part 1 — the typewriter sequence
+   ================================================================= */
+function typewriter(n) {                  // interval of the n-th term (n ≥ 1)
+  let k = 1, start = 1;                   // block k has terms start … start+k−1
+  while (n >= start + k) { start += k; k++; }
+  const j = n - start;                    // 0 … k−1
+  return { k, lo: j / k, hi: (j + 1) / k };
+}
+function drawTw() {
+  const w = clamp($("tw_w").value, 0, 1, 0.37), N = Number($("tw_n").value);
+  const F = frame($("cTw"), { x0: 1, x1: N, y0: 0, y1: 1.1, xlabel: "n", ylabel: "Xₙ(ω)",
+    yfmt: v => (v === 0 || v === 1) ? String(v) : "" });
+  const x = F.x; F.clip();
+  x.strokeStyle = css("--accent"); x.lineWidth = 1.4;
+  let hits = 0, lastHit = 0;
+  const prob = [];
+  for (let n = 1; n <= N; n++) {
+    const I = typewriter(n), on = (w >= I.lo && w < I.hi) || (w === 1 && I.hi === 1);
+    if (on) { hits++; lastHit = n; x.beginPath(); x.moveTo(F.X(n), F.Y(0)); x.lineTo(F.X(n), F.Y(1)); x.stroke(); }
+    prob.push([n, I.hi - I.lo]);
+  }
+  x.restore();
+  line(F, prob, css("--line2"), 1.6, [6, 4]);
+  const kmax = typewriter(N).k;
+  $("twInfo").innerHTML = "ω = " + w + ": X<sub>n</sub>(ω) = 1 for <strong>" + hits + "</strong> values of n ≤ " + N +
+    " (one per block, " + kmax + " blocks so far), the last at n = " + lastHit +
+    ". Meanwhile P(X<sub>n</sub> = 1) = E[X<sub>n</sub>²] = 1/k has dropped to " + fmt(1 / kmax) +
+    " (dashed line). Convergence in probability and in L², but for no ω does the sequence settle at 0.";
+}
+
+/* =================================================================
+   Part 2 — distributions and simulation of trajectories
+   ================================================================= */
+const DIST = {
+  bern:   { mu: 0.3, sd: Math.sqrt(0.21), eps: 0.05, draw: r => r() < 0.3 ? 1 : 0,
+            text: "Bernoulli(0.3): μ = 0.3, σ² = 0.21. All the hypotheses hold." },
+  unif:   { mu: 0.5, sd: Math.sqrt(1 / 12), eps: 0.05, draw: r => r(),
+            text: "Uniform(0, 1): μ = 0.5, σ² = 1/12. Symmetric and bounded: everything converges fast." },
+  exp:    { mu: 1, sd: 1, eps: 0.1, draw: r => -Math.log(1 - r()),
+            text: "Exponential(1): μ = 1, σ² = 1. Skewed: the CLT is slower." },
+  pareto: { mu: 3, sd: Infinity, eps: 0.5, draw: r => Math.pow(1 - r(), -1 / 1.5),
+            text: "Pareto(α = 1.5, xₘ = 1): μ = 3 but σ² = ∞. The LLN still holds (it needs only E|X| < ∞), slowly; L² and the CLT fail." },
+  cauchy: { mu: 0, sd: NaN, eps: 0.5, draw: r => Math.tan(Math.PI * (r() - 0.5)),
+            text: "Cauchy: E|X| = ∞, there is no mean (0 is the centre of symmetry). X̄ₙ is again Cauchy for every n: no law of large numbers at all." }
+};
+let SIM = null;
+function simulate() {
+  const key = $("dist").value, D = DIST[key];
+  const nmax = Number($("nmax").value), R = Number($("R").value);
+  const eps = clamp($("eps").value, 1e-6, 1e6, D.eps), seed = Math.round(clamp($("seed").value, 1, 2 ** 31, 2026));
+  const grid = logGrid(1, nmax, 60), G = grid.length;
+  const pgrid = logGrid(1, nmax, 400), P = pgrid.length, M = Math.min(20, R);
+  const dev = new Float64Array(R * G), last = new Int32Array(R), paths = [];
+  const rnd = mulberry32(seed);
+  for (let r = 0; r < R; r++) {
+    let s = 0, lst = 0, g = 0, pj = 0; const path = r < M ? [] : null;
+    for (let n = 1; n <= nmax; n++) {
+      s += D.draw(rnd);
+      const d = s / n - D.mu;
+      if (Math.abs(d) > eps) lst = n;
+      if (n === grid[g]) { dev[r * G + g] = d; g++; }
+      if (path && n === pgrid[pj]) { path.push([n, s / n]); pj++; }
+    }
+    last[r] = lst; if (path) paths.push(path);
+  }
+  const pNow = [], pEver = [], mse = [], spread = [];
+  for (let g = 0; g < G; g++) {
+    let c1 = 0, c2 = 0, q = 0; const col = new Float64Array(R);
+    for (let r = 0; r < R; r++) {
+      const d = dev[r * G + g];
+      if (Math.abs(d) > eps) c1++;
+      if (last[r] >= grid[g]) c2++;
+      q += d * d; col[r] = grid[g] * d;
+    }
+    col.sort();
+    pNow.push(c1 / R); pEver.push(c2 / R); mse.push(q / R);
+    spread.push((quantile(col, 0.75) - quantile(col, 0.25)) / 1.349);
+  }
+  SIM = { key, D, nmax, R, eps, grid, paths, pNow, pEver, mse, spread };
+}
+function drawPaths() {
+  const S = SIM, D = S.D, lo = D.mu - 6 * S.eps, hi = D.mu + 6 * S.eps;
+  const F = frame($("cPaths"), { xlog: true, x0: 1, x1: S.nmax, y0: lo, y1: hi, xlabel: "n", ylabel: "X̄ₙ" });
+  band(F, [[1, D.mu - S.eps], [S.nmax, D.mu - S.eps]], [[1, D.mu + S.eps], [S.nmax, D.mu + S.eps]], css("--band"));
+  S.paths.forEach((p, i) => line(F, p, PAL[i % PAL.length], 1.1));
+  line(F, [[1, D.mu], [S.nmax, D.mu]], css("--fg"), 1.2, [4, 4]);
+}
+const PAL = ["#7a1f2b", "#1f5f7a", "#2e9e5b", "#c98a1b", "#6b4fa0", "#b5527a", "#4a8f8f", "#8a6d3b", "#3d5a99", "#9c3d3d"];
+function drawProb() {
+  const S = SIM;
+  const F = frame($("cProb"), { xlog: true, x0: 1, x1: S.nmax, y0: 0, y1: 1, xlabel: "n", ylabel: "probability" });
+  line(F, S.grid.map((n, g) => [n, S.pEver[g]]), css("--accent"), 2);
+  line(F, S.grid.map((n, g) => [n, S.pNow[g]]), css("--line2"), 2);
+  const at = v => { const g = S.grid.findIndex(n => n >= v); return g < 0 ? S.grid.length - 1 : g; };
+  const g1 = at(S.nmax / 20);
+  $("probInfo").innerHTML = "At n = " + S.grid[g1] + ": outside the band now " + pct(S.pNow[g1]) +
+    ", outside at some later time " + pct(S.pEver[g1]) + ". " +
+    (S.key === "cauchy" ? "<span class='warn'>For the Cauchy neither curve goes to 0: no convergence in any sense.</span>"
+      : "The sup curve is always higher: a.s. is the stronger requirement. Both decrease to 0 because here the strong law holds." +
+        (S.key === "pareto" ? " With σ² = ∞ the decrease is much slower." : ""));
+}
+function drawMse() {
+  const S = SIM, D = S.D, pts = S.grid.map((n, g) => [n, S.mse[g]]).filter(p => p[1] > 0);
+  let y0 = Infinity, y1 = 0;
+  pts.forEach(p => { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+  const fin = Number.isFinite(D.sd);
+  if (fin) { y0 = Math.min(y0, D.sd ** 2 / S.nmax); y1 = Math.max(y1, D.sd ** 2); }
+  y0 = Math.pow(10, Math.floor(Math.log10(y0))); y1 = Math.pow(10, Math.ceil(Math.log10(y1)));
+  const F = frame($("cMse"), { xlog: true, ylog: true, x0: 1, x1: S.nmax, y0, y1, xlabel: "n", ylabel: "E[(X̄ₙ − μ)²]" });
+  if (fin) line(F, [[1, D.sd ** 2], [S.nmax, D.sd ** 2 / S.nmax]], css("--line2"), 1.6, [6, 4]);
+  line(F, pts, css("--accent"), 2);
+}
+function drawScale() {
+  const S = SIM, g = S.grid;
+  const c0 = g.map((n, i) => [n, S.spread[i]]);
+  const c5 = g.map((n, i) => [n, S.spread[i] / Math.sqrt(n)]);
+  const c1 = g.map((n, i) => [n, S.spread[i] / n]);
+  let y0 = Infinity, y1 = 0;
+  [c0, c5, c1].forEach(c => c.forEach(p => { if (p[1] > 0) { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); } }));
+  y0 = Math.pow(10, Math.floor(Math.log10(y0))); y1 = Math.pow(10, Math.ceil(Math.log10(y1)));
+  const F = frame($("cScale"), { xlog: true, ylog: true, x0: 1, x1: S.nmax, y0, y1, xlabel: "n", ylabel: "spread" });
+  line(F, c0, "#2e9e5b", 2); line(F, c5, css("--line2"), 2); line(F, c1, css("--accent"), 2);
+  // slope of log spread(Sₙ − nμ) vs log n, fitted on n ≥ 10
+  let sx = 0, sy = 0, sxx = 0, sxy = 0, m = 0;
+  g.forEach((n, i) => { if (n >= 10 && S.spread[i] > 0) { const u = Math.log(n), v = Math.log(S.spread[i]);
+    sx += u; sy += v; sxx += u * u; sxy += u * v; m++; } });
+  const slope = (m * sxy - sx * sy) / (m * sxx - sx * sx);
+  const theory = { bern: 0.5, unif: 0.5, exp: 0.5, pareto: 1 / 1.5, cauchy: 1 }[S.key];
+  $("scaleInfo").innerHTML = "Fitted growth of the spread of Sₙ − nμ: n<sup>" + slope.toFixed(3) + "</sup> (theory: n<sup>" +
+    fmt(theory) + "</sup>). " + (theory === 0.5 ? "Only the √n normalization (blue) stays flat."
+      : "<span class='warn'>Here the right normalization is n<sup>" + fmt(theory) + "</sup>, not √n: the blue curve keeps growing.</span>");
+}
+
+/* ---------- (d) CLT ---------- */
+function runClt() {
+  const D = DIST[$("dist").value], n = Number($("cltN").value), R = Number($("cltR").value);
+  const rnd = mulberry32(Math.round(clamp($("seed").value, 1, 2 ** 31, 2026)) ^ 0x5bd1e995);
+  const fin = Number.isFinite(D.sd), sc = fin ? D.sd : 1;
+  const Z = new Float64Array(R);
+  for (let r = 0; r < R; r++) { let s = 0; for (let i = 0; i < n; i++) s += D.draw(rnd); Z[r] = Math.sqrt(n) * (s / n - D.mu) / sc; }
+  const zs = Float64Array.from(Z).sort();
+  let ks = 0; for (let i = 0; i < R; i++) { const f = Phi(zs[i]); ks = Math.max(ks, Math.abs((i + 1) / R - f), Math.abs(i / R - f)); }
+  // histogram on [−4, 4]
+  const lo = -4, hi = 4, nb = 48, wdt = (hi - lo) / nb, cnt = new Array(nb).fill(0); let out = 0;
+  for (const z of Z) { const b = Math.floor((z - lo) / wdt); if (b >= 0 && b < nb) cnt[b]++; else out++; }
+  const dens = cnt.map(c => c / (R * wdt)), ymax = Math.max(0.45, ...dens) * 1.08;
+  const F = frame($("cClt"), { x0: lo, x1: hi, y0: 0, y1: ymax, xlabel: fin ? "zₙ = √n(x̄ − μ)/σ" : "√n(x̄ − μ)", ylabel: "density" });
+  const x = F.x; F.clip(); x.fillStyle = css("--band2"); x.strokeStyle = css("--line2"); x.lineWidth = 0.8;
+  dens.forEach((d, b) => { const x0 = F.X(lo + b * wdt), x1 = F.X(lo + (b + 1) * wdt);
+    x.fillRect(x0, F.Y(d), x1 - x0, F.Y(0) - F.Y(d)); x.strokeRect(x0, F.Y(d), x1 - x0, F.Y(0) - F.Y(d)); });
+  x.restore();
+  const curve = []; for (let i = 0; i <= 200; i++) { const z = lo + (hi - lo) * i / 200; curve.push([z, npdf(z)]); }
+  line(F, curve, css("--accent"), 2.2);
+  let mean = 0; Z.forEach(z => mean += z); mean /= R; let v = 0; Z.forEach(z => v += (z - mean) ** 2); v /= (R - 1);
+  $("cltInfo").innerHTML = "n = " + n + ", " + R.toLocaleString("en") + " samples. " +
+    (fin ? "Mean of Zₙ " + mean.toFixed(3) + ", sd " + Math.sqrt(v).toFixed(3) + " (target 0 and 1); Kolmogorov distance to N(0, 1): <strong>" + ks.toFixed(4) + "</strong>."
+      : "<span class='warn'>σ² = ∞: there is no σ to standardize by, and √n(X̄ₙ − μ) does not settle down — " +
+        pct(out / R) + " of the values fall outside [−4, 4] (the red curve is N(0, 1) only for reference).</span>") +
+    (out && fin ? " " + pct(out / R) + " of the values outside [−4, 4]." : "");
+  // KS table across n (finite variance only)
+  if (!fin) { $("tClt").innerHTML = ""; return; }
+  const ns = [1, 2, 5, 10, 30, 100, 300], RR = 4000;
+  let t = "<tr><th>n</th>" + ns.map(m => "<th>" + m + "</th>").join("") + "</tr><tr><td>sup |Fₙ − Φ|</td>";
+  const rnd2 = mulberry32(99);
+  ns.forEach(m => {
+    const a = new Float64Array(RR);
+    for (let r = 0; r < RR; r++) { let s = 0; for (let i = 0; i < m; i++) s += D.draw(rnd2); a[r] = Math.sqrt(m) * (s / m - D.mu) / D.sd; }
+    a.sort(); let d = 0; for (let i = 0; i < RR; i++) { const f = Phi(a[i]); d = Math.max(d, Math.abs((i + 1) / RR - f), Math.abs(i / RR - f)); }
+    t += "<td>" + d.toFixed(3) + "</td>";
+  });
+  t += "</tr><tr><td class='muted'>1/√n</td>" + ns.map(m => "<td class='muted'>" + (1 / Math.sqrt(m)).toFixed(3) + "</td>").join("") + "</tr>";
+  $("tClt").innerHTML = t;
+}
+
+/* =================================================================
+   Part 3 — AR(1): dependence and the effective sample size
+   ================================================================= */
+let AR = null;
+function exactVarMean(rho, n) { let s = 0, rk = 1; for (let k = 1; k < n; k++) { rk *= rho; s += (1 - k / n) * rk; } return (1 + 2 * s) / n; }
+function runAr() {
+  const rho = Number($("rho").value), N = Number($("arN").value), R = Number($("arR").value);
+  $("rhov").textContent = rho.toFixed(2);
+  const grid = logGrid(1, N, 30), G = grid.length, sum2 = new Float64Array(G), cov = new Float64Array(G);
+  const rnd = mulberry32(31337), q = Math.sqrt(1 - rho * rho);
+  for (let r = 0; r < R; r++) {
+    let x = gauss(rnd), s = 0, g = 0;
+    for (let n = 1; n <= N; n++) {
+      if (n > 1) x = rho * x + q * gauss(rnd);
+      s += x;
+      if (n === grid[g]) { const m = s / n; sum2[g] += m * m; if (Math.abs(m) <= 1.96 / Math.sqrt(n)) cov[g]++; g++; }
+    }
+  }
+  AR = { rho, N, R, grid, sd: Array.from(sum2, v => Math.sqrt(v / R)), cov: Array.from(cov, v => v / R) };
+  drawAr();
+}
+function drawAr() {
+  const A = AR, g = A.grid;
+  const ex = g.map(n => [n, Math.sqrt(exactVarMean(A.rho, n))]);
+  let y0 = Math.min(1 / Math.sqrt(A.N), ...ex.map(p => p[1]), ...A.sd), y1 = Math.max(1.2, ...ex.map(p => p[1]), ...A.sd);
+  y0 = Math.pow(10, Math.floor(Math.log10(y0))); y1 = Math.pow(10, Math.ceil(Math.log10(y1)));
+  const F = frame($("cAr"), { xlog: true, ylog: true, x0: 1, x1: A.N, y0, y1, xlabel: "n", ylabel: "sd(X̄ₙ)" });
+  line(F, [[1, 1], [A.N, 1 / Math.sqrt(A.N)]], css("--muted"), 1.5, [6, 4]);
+  line(F, ex, css("--line2"), 2);
+  const x = F.x; F.clip(); x.fillStyle = css("--accent");
+  g.forEach((n, i) => { x.beginPath(); x.arc(F.X(n), F.Y(A.sd[i]), 3, 0, 2 * Math.PI); x.fill(); });
+  x.restore();
+  const k = g.length - 1, n = g[k], neff = n * (1 - A.rho) / (1 + A.rho);
+  $("arStats").innerHTML =
+    stat("simulated sd(X̄ₙ) at n = " + n, A.sd[k].toFixed(4)) +
+    stat("assuming independence 1/√n", (1 / Math.sqrt(n)).toFixed(4)) +
+    stat("ratio", (A.sd[k] * Math.sqrt(n)).toFixed(2) + "×") +
+    stat("effective sample size", Math.round(neff).toLocaleString("en") + " of " + n.toLocaleString("en")) +
+    stat("real coverage of X̄ ± 1.96/√n", "<span class='" + (Math.abs(A.cov[k] - 0.95) < 0.02 ? "ok" : "bad") + "'>" + pct(A.cov[k]) + "</span>");
+}
+
+/* =================================================================
+   Part 4 — Bayes and the intrusion detector
+   ================================================================= */
+function runIds() {
+  const pr = Math.pow(10, Number($("base").value)), se = Number($("sens").value), fp = Number($("fpr").value);
+  $("baseV").textContent = fmt(pr); $("sensV").textContent = se.toFixed(3); $("fprV").textContent = fp.toFixed(4);
+  const LR = se / fp, post = (p, k) => { const o = p / (1 - p) * Math.pow(LR, k); return Number.isFinite(o) ? o / (1 + o) : 1; };
+  const pAlarm = se * pr + fp * (1 - pr);
+  const p1 = post(pr, 1), p2 = post(pr, 2), p3 = post(pr, 3);
+  const pNo = (1 - se) * pr / ((1 - se) * pr + (1 - fp) * (1 - pr));
+  $("idsStats").innerHTML =
+    stat("prior P(attack)", pct(pr)) + stat("P(alarm) (total probability)", pct(pAlarm)) +
+    stat("likelihood ratio sens/fpr", fmt(LR)) +
+    stat("P(attack | alarm)", "<span class='bad'>" + pct(p1) + "</span>") +
+    stat("P(attack | 2 alarms)", pct(p2)) + stat("P(attack | no alarm)", pct(pNo));
+  const N = 100000, att = N * pr, ben = N - att, tp = att * se, fa = ben * fp;
+  const r0 = v => Math.round(v).toLocaleString("en");
+  $("tIds").innerHTML = "<tr><th class='lab'>out of " + N.toLocaleString("en") + " connections</th><th>alarm</th><th>no alarm</th><th class='tot'>total</th></tr>" +
+    "<tr><td class='lab'>attack</td><td>" + r0(tp) + "</td><td>" + r0(att - tp) + "</td><td class='tot'>" + r0(att) + "</td></tr>" +
+    "<tr><td class='lab'>benign</td><td>" + r0(fa) + "</td><td>" + r0(ben - fa) + "</td><td class='tot'>" + r0(ben) + "</td></tr>" +
+    "<tr><td class='lab tot'>total</td><td class='tot'>" + r0(tp + fa) + "</td><td class='tot'>" + r0(N - tp - fa) + "</td><td class='tot'>" + r0(N) + "</td></tr>";
+  const F = frame($("cIds"), { xlog: true, x0: 1e-5, x1: 0.5, y0: 0, y1: 1, xlabel: "prior P(attack)", ylabel: "P(attack | alarms)" });
+  [[1, css("--accent")], [2, css("--line2")], [3, "#2e9e5b"]].forEach(([k, col]) => {
+    const pts = []; for (let i = 0; i <= 200; i++) { const p = Math.pow(10, -5 + (Math.log10(0.5) + 5) * i / 200); pts.push([p, post(p, k)]); }
+    line(F, pts, col, 2);
+  });
+  const diag = []; for (let i = 0; i <= 100; i++) { const p = Math.pow(10, -5 + (Math.log10(0.5) + 5) * i / 100); diag.push([p, p]); }
+  line(F, diag, css("--muted"), 1.3, [6, 4]);
+  const x = F.x; F.clip(); x.fillStyle = css("--fg"); x.beginPath(); x.arc(F.X(pr), F.Y(p1), 4.5, 0, 2 * Math.PI); x.fill(); x.restore();
+  $("idsVerdict").innerHTML = "Of the " + r0(tp + fa) + " alarms, only " + r0(tp) + " are real attacks: P(attack | alarm) = " +
+    r0(tp) + " / " + r0(tp + fa) + " = <strong>" + pct(p1) + "</strong>" +
+    (p1 < 0.5 ? ", even though the detector is " + pct(se) + " sensitive and wrong on only " + pct(fp) +
+      " of benign traffic. With a rare event the prior dominates: most alarms are false (base-rate fallacy)." :
+      ". Here the base rate is high enough, or the false-positive rate low enough, that an alarm is convincing.") +
+    " A second independent alarm multiplies the odds again by " + fmt(LR) + " → " + pct(p2) + ".";
+}
+
+/* =================================================================
+   Part 5 — Beta–Binomial
+   ================================================================= */
+const PRIORS = { flat: [1, 1, "Uniform Beta(1, 1)"], jeff: [0.5, 0.5, "Jeffreys Beta(½, ½)"],
+  last: [4, 16, "Last year Beta(4, 16)"], wrong: [90, 10, "Overconfident Beta(90, 10)"] };
+const GN = 4000;
+function betaGrid(a, b) {               // normalized density on GN midpoints and its CDF
+  const d = new Float64Array(GN), c = new Float64Array(GN); let mx = -Infinity;
+  for (let i = 0; i < GN; i++) { const x = (i + 0.5) / GN; d[i] = (a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x); if (d[i] > mx) mx = d[i]; }
+  let s = 0; for (let i = 0; i < GN; i++) { d[i] = Math.exp(d[i] - mx); s += d[i]; }
+  let acc = 0; for (let i = 0; i < GN; i++) { d[i] = d[i] / s * GN; acc += d[i] / GN; c[i] = acc; }
+  return { d, c };
+}
+function bq(G, q) {                      // quantile from the grid CDF
+  let lo = 0, hi = GN - 1;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (G.c[m] < q) lo = m + 1; else hi = m; }
+  const c0 = lo ? G.c[lo - 1] : 0, f = (q - c0) / Math.max(1e-300, G.c[lo] - c0);
+  return (lo + Math.min(1, Math.max(0, f))) / GN;
+}
+function bcdf(G, x) { const i = Math.min(GN - 1, Math.max(0, Math.floor(x * GN - 0.5))); return G.c[i]; }
+function summary(a, b, n, k) {
+  const A = a + k, B = b + n - k, G = betaGrid(A, B);
+  return { A, B, mean: A / (A + B), lo: bq(G, 0.025), hi: bq(G, 0.975), G };
+}
+let STREAM = null, STREAMKEY = "";
+function stream(p, seed) {
+  const key = p + "|" + seed; if (key === STREAMKEY) return STREAM;
+  const r = mulberry32(seed), s = new Uint8Array(2000); for (let i = 0; i < 2000; i++) s[i] = r() < p ? 1 : 0;
+  STREAMKEY = key; STREAM = s; return s;
+}
+function readPrior() {
+  const key = $("prior").value;
+  if (key !== "custom") { $("pa").value = PRIORS[key][0]; $("pb").value = PRIORS[key][1]; }
+  return [clamp($("pa").value, 0.01, 1e4, 1), clamp($("pb").value, 0.01, 1e4, 1)];
+}
+function runBayes() {
+  const [a, b] = readPrior();
+  const pt = clamp($("ptrue").value, 0, 1, 0.12), seed = Math.round(clamp($("bseed").value, 1, 2 ** 31, 7));
+  const n = Math.round(clamp($("bn").value, 0, 2000, 20)); $("bn").value = n;
+  const thr = clamp($("thr").value, 0.001, 0.999, 0.15);
+  const S = stream(pt, seed); let k = 0; for (let i = 0; i < n; i++) k += S[i];
+  const prior = betaGrid(a, b), lik = betaGrid(k + 1, n - k + 1), P = summary(a, b, n, k);
+  $("bayesData").innerHTML = "Data: <strong>k = " + k + "</strong> clicks out of <strong>n = " + n + "</strong> employees" +
+    (n ? " (MLE k/n = " + (k / n).toFixed(3) + ")" : " — no data yet: the posterior is the prior") + ".";
+  // x-range: where any of the three curves has noticeable mass
+  let x0 = 1, x1 = 0;
+  [prior, P.G].concat(n ? [lik] : []).forEach(G => { x0 = Math.min(x0, bq(G, 0.0005)); x1 = Math.max(x1, bq(G, 0.9995)); });
+  x0 = Math.min(x0, pt); x1 = Math.max(x1, pt);
+  const pad = (x1 - x0) * 0.08; x0 = Math.max(0, x0 - pad); x1 = Math.min(1, x1 + pad);
+  const i0 = Math.floor(x0 * GN), i1 = Math.min(GN - 1, Math.ceil(x1 * GN)), step = Math.max(1, Math.floor((i1 - i0) / 500));
+  const curve = G => { const o = []; for (let i = i0; i <= i1; i += step) o.push([(i + 0.5) / GN, G.d[i]]); return o; };
+  const cp = curve(prior), cl = n ? curve(lik) : [], cq = curve(P.G);
+  const ymax = Math.max(...cq.map(p => p[1]), ...(cl.length ? cl.map(p => p[1]) : [0]), ...cp.map(p => Math.min(p[1], 1e3))) * 1.08;
+  const F = frame($("cPost"), { x0, x1, y0: 0, y1: ymax, xlabel: "p", ylabel: "density" });
+  // shade the 95% credible interval
+  const sh = cq.filter(q => q[0] >= P.lo && q[0] <= P.hi);
+  if (sh.length) band(F, sh.map(q => [q[0], 0]), sh, css("--band"));
+  line(F, [[pt, 0], [pt, ymax]], css("--muted"), 1.3, [4, 4]);
+  line(F, cp, "#2e9e5b", 2, [7, 4]);
+  if (cl.length) line(F, cl, css("--line2"), 2);
+  line(F, cq, css("--accent"), 2.4);
+  const w = (a + b) / (a + b + n), mle = n ? k / n : NaN;
+  const se = n ? Math.sqrt(mle * (1 - mle) / n) : NaN;
+  const pAbove = 1 - bcdf(P.G, thr);
+  $("bayesStats").innerHTML =
+    stat("prior mean a/(a+b)", (a / (a + b)).toFixed(3)) +
+    stat("MLE k/n", n ? mle.toFixed(3) : "—") +
+    stat("weight of the prior w", w.toFixed(3)) +
+    stat("posterior mean", P.mean.toFixed(3)) +
+    stat("95% credible interval", "[" + P.lo.toFixed(3) + ", " + P.hi.toFixed(3) + "]") +
+    stat("95% Wald CI (frequentist)", n ? "[" + Math.max(0, mle - 1.96 * se).toFixed(3) + ", " + Math.min(1, mle + 1.96 * se).toFixed(3) + "]" +
+      (k === 0 || k === n ? " <span class='warn'>(degenerate)</span>" : "") : "—") +
+    stat("P(p &gt; " + thr + " | data)", pct(pAbove));
+  // sensitivity table
+  let t = "<tr><th class='lab'>prior</th><th>prior mean</th><th>weight w</th><th>posterior mean</th><th>95% credible interval</th><th>P(p &gt; " + thr + " | data)</th></tr>";
+  Object.keys(PRIORS).forEach(key => {
+    const [aa, bb, name] = PRIORS[key], Q = summary(aa, bb, n, k);
+    t += "<tr" + (key === $("prior").value ? " style='font-weight:600'" : "") + "><td class='lab'>" + name + "</td><td>" + (aa / (aa + bb)).toFixed(3) +
+      "</td><td>" + ((aa + bb) / (aa + bb + n)).toFixed(3) + "</td><td>" + Q.mean.toFixed(3) + "</td><td>[" + Q.lo.toFixed(3) + ", " + Q.hi.toFixed(3) +
+      "]</td><td>" + pct(1 - bcdf(Q.G, thr)) + "</td></tr>";
+  });
+  $("tSens").innerHTML = t;
+  drawSeq(a, b, pt, S);
+}
+function drawSeq(a, b, pt, S) {
+  const ns = [0].concat(logGrid(1, 1000, 36)), cum = new Int32Array(1001);
+  for (let i = 0; i < 1000; i++) cum[i + 1] = cum[i] + S[i];
+  const ch = [], fl = [];
+  ns.forEach(n => { ch.push(summary(a, b, n, cum[n])); fl.push(summary(1, 1, n, cum[n])); });
+  const X = n => n + 1;                    // plot against n + 1 so that n = 0 fits on a log axis
+  const F = frame($("cSeq"), { xlog: true, x0: 1, x1: 1001, y0: 0, y1: 1, xlabel: "employees n (+1)", ylabel: "p",
+    xfmt: v => tickLab(v) });
+  band(F, ns.map((n, i) => [X(n), fl[i].lo]), ns.map((n, i) => [X(n), fl[i].hi]), css("--band2"));
+  band(F, ns.map((n, i) => [X(n), ch[i].lo]), ns.map((n, i) => [X(n), ch[i].hi]), css("--band"));
+  line(F, ns.map((n, i) => [X(n), fl[i].mean]), css("--line2"), 2);
+  line(F, ns.map((n, i) => [X(n), ch[i].mean]), css("--accent"), 2);
+  line(F, [[1, pt], [1001, pt]], css("--muted"), 1.3, [4, 4]);
+}
+
+/* =================================================================
+   wiring
+   ================================================================= */
+function runSim() { simulate(); drawSim(); }
+function drawSim() {
+  $("distInfo").innerHTML = DIST[SIM.key].text + " ε = " + SIM.eps + ", " + SIM.R + " trajectories of length " + SIM.nmax.toLocaleString("en") + ".";
+  drawPaths(); drawProb(); drawMse(); drawScale();
+}
+$("dist").addEventListener("change", () => { $("eps").value = DIST[$("dist").value].eps; runSim(); runClt(); });
+["nmax", "R", "eps", "seed"].forEach(id => $(id).addEventListener("change", runSim));
+$("seed").addEventListener("change", runClt);
+$("resample").addEventListener("click", () => { $("seed").value = Math.round(clamp($("seed").value, 1, 2 ** 31, 2026)) + 1; runSim(); runClt(); });
+["cltN", "cltR"].forEach(id => $(id).addEventListener("change", runClt));
+["tw_w", "tw_n"].forEach(id => $(id).addEventListener("change", drawTw));
+$("rho").addEventListener("input", () => { $("rhov").textContent = Number($("rho").value).toFixed(2); });
+["rho", "arN", "arR"].forEach(id => $(id).addEventListener("change", runAr));
+["base", "sens", "fpr"].forEach(id => $(id).addEventListener("input", runIds));
+$("prior").addEventListener("change", runBayes);
+["pa", "pb"].forEach(id => $(id).addEventListener("change", () => { $("prior").value = "custom"; runBayes(); }));
+["ptrue", "bn", "bseed", "thr"].forEach(id => $(id).addEventListener("change", runBayes));
+$("add10").addEventListener("click", () => { $("bn").value = Math.min(2000, Number($("bn").value) + 10); runBayes(); });
+function drawAll() { drawTw(); drawSim(); runClt(); drawAr(); runIds(); runBayes(); }
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+drawTw(); runSim(); runClt(); runAr(); runIds(); runBayes();
+})();
+</script>
+</body>
+</html>
